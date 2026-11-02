@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomTabs } from '../components/BottomTabs';
+import type { Tab } from '../components/BottomTabs';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { sampleDrafts } from '../data/sampleDrafts';
 import { theme } from '../theme';
@@ -22,6 +23,8 @@ import type { Audience, CheckPostRequest, Platform as SharingPlatform } from '..
 
 type Props = {
   onCheck: (request: CheckPostRequest) => void;
+  onTabPress?: (tab: Tab) => void;
+  availableTabs?: readonly Tab[];
 };
 
 function ChoiceGroup<T extends string>({
@@ -62,7 +65,7 @@ function ChoiceGroup<T extends string>({
   );
 }
 
-export function CheckPostScreen({ onCheck }: Props) {
+export function CheckPostScreen({ onCheck, onTabPress, availableTabs }: Props) {
   const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState('');
   const [platform, setPlatform] = useState<SharingPlatform>('LinkedIn');
@@ -159,7 +162,9 @@ export function CheckPostScreen({ onCheck }: Props) {
       <View style={styles.action}>
         <PrimaryButton label="Check with Lens" disabled={!canCheck} onPress={checkDraft} />
       </View>
-      {!keyboardVisible && <BottomTabs activeTab="Check" />}
+      {!keyboardVisible && (
+        <BottomTabs activeTab="Check" onTabPress={onTabPress} availableTabs={availableTabs} />
+      )}
     </KeyboardAvoidingView>
   );
 }

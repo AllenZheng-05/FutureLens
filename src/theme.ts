@@ -4,6 +4,8 @@ export const theme = {
     background: '#F4F5FA',
     surface: '#FFFFFF',
     ink: '#1B1F3B',
+    heading: '#000000',
+    secondaryText: '#6B7280',
     muted: '#616883',
     inactive: '#9CA1BD',
     primary: '#4B4FD9',

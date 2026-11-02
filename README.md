@@ -47,24 +47,44 @@ the device's system font in place of Inter, which has not been bundled.
 - Load either fictional sample to populate the draft and its sharing choices.
 - Clear the draft with the Clear action.
 - Check with Lens opens an explicit preview notice, not generated analysis.
-- My Lens and Footprint are visible but disabled until their page checkpoints.
-- Drafts and choices live in component state; they are not saved or uploaded.
+- Switch between Check and My Lens using the bottom tabs. Footprint remains
+  disabled until its page checkpoint.
+- Drafts and choices survive tab changes. They live only in component state and
+  reset when the app restarts; they are not saved or uploaded.
 
 `CheckPostScreen` accepts `onCheck(request: CheckPostRequest)`. The callback
 receives `{ draft, platform, audience }`, with surrounding draft whitespace
 trimmed. Replace `previewCheck` in `App.tsx` with the teammate-owned analysis and
-results flow; the screen does not implement either.
+results flow; the screen does not implement either. It also accepts `onTabPress`
+and `availableTabs` for the app's navigation.
 
 The screen uses safe-area insets, a scrolling content area, touch targets of at
 least 44 points, and keyboard avoidance on iOS. The tab bar hides while the
 keyboard is visible. Review these interactions on a phone before the live demo.
+
+### My Lens introduction: UI checkpoint
+
+The My Lens tab implements Figma's **Lens - 1** (`26:458`): its title,
+illustration, introduction text, primary action, and selected tab state.
+Illustration layers are original Figma exports, bundled locally at 3× resolution
+and placed in the design's original order and dimensions. The repeated green
+dot shares one identical source asset.
+
+Set up my Lens opens an explicit preview notice. Goal selection, audience
+selection, concerns, sharing rules, and preference saving remain future page
+checkpoints. `MyLensScreen.onStartSetup` is the handoff point for that wizard;
+no preferences are currently saved or applied to post checks.
+
+The app keeps both implemented pages mounted, so changing tabs preserves the
+draft and sharing selections. Inactive pages are hidden from accessibility
+navigation. Android's hardware back action returns from My Lens to Check.
 
 ## Tasks and implementation status
 
 | Task | Planned interface | Status |
 | --- | --- | --- |
 | Check a post | Draft input, sharing choices, sample drafts | Input UI complete; analysis/results pending |
-| Personalize checks | Goals, concerns, audience and sharing preferences | Not implemented |
+| Personalize checks | My Lens introduction and setup entry | Introduction UI complete; settings wizard pending |
 | Review digital footprint | Demo accounts, historical posts, filters and details | Not implemented |
 
 Hardcoded content: `src/data/sampleDrafts.ts` contains two fictional draft
@@ -84,7 +104,7 @@ satisfy the fully functional task requirement for the November 3 demo.
 - The coding agent must not stage, commit, push, change author settings, rewrite
   history, or add AI coauthor trailers to commits.
 
-Suggested page commit: `Build Check a post input screen from Figma`.
+Suggested page commit: `Add My Lens intro screen and tab navigation`.
 
 ### Verification
 
@@ -93,11 +113,11 @@ npm run typecheck
 npx expo export --platform ios --output-dir .expo/verification-ios
 ```
 
-Both checks passed for this page checkpoint, including bundling the two local
-navigation icons. A temporary component smoke check also passed for blank draft
-validation, sample loading, selected sharing choices, callback data, clearing,
-and keyboard-driven tab visibility. That check used mocked native primitives;
-it does not replace a device test.
+Both checks passed for this page checkpoint, including bundling all ten local
+image assets. Temporary component smoke checks passed for draft input behavior,
+tab navigation, retained draft and sharing selections, the setup preview callback,
+Android back behavior, inactive-page accessibility, and image dimensions. These
+checks use mocked native primitives and do not replace a device test.
 
 A device/simulator visual and keyboard check is still required;
 the implementation environment could not connect to the simulator or browser.

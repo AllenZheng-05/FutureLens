@@ -37,12 +37,14 @@ export function BottomTabs({ activeTab, onTabPress, availableTabs = ['Check'] }:
             style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
           >
             {tab === 'My Lens' ? (
-              <View style={styles.lensIcon} />
+              <View style={[styles.lensIcon, selected && styles.selectedLensIcon]} />
             ) : (
               <Image
                 accessible={false}
                 source={tab === 'Check'
-                  ? require('../../assets/icons/check.png')
+                  ? selected
+                    ? require('../../assets/icons/check.png')
+                    : require('../../assets/icons/check-inactive.png')
                   : require('../../assets/icons/footprint.png')}
                 style={styles.icon}
                 resizeMode="contain"
@@ -79,6 +81,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: theme.colors.inactive,
   },
+  selectedLensIcon: { backgroundColor: theme.colors.primary },
   label: {
     color: theme.colors.inactive,
     fontSize: 11,
