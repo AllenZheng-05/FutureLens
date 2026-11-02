@@ -74,10 +74,10 @@ selection, concerns, sharing rules, and preference saving remain future page
 checkpoints. `MyLensScreen.onStartSetup` is the handoff point for that wizard;
 no preferences are currently saved or applied to post checks.
 
-The app keeps all three implemented pages mounted, so changing tabs preserves the
-draft and sharing selections. Inactive pages are hidden from accessibility
-navigation. Android's hardware back action returns from My Lens or Footprint to
-Check.
+The app keeps implemented pages mounted, so changing tabs preserves the draft
+and sharing selections. Inactive pages are hidden from accessibility navigation.
+Android's hardware back action returns from My Lens or the Footprint introduction
+to Check.
 
 ### Footprint introduction: UI checkpoint
 
@@ -86,14 +86,39 @@ accent-colored subtitle, centered explanation, Connect Accounts action, and
 selected tab state. The selected Footprint icon is an original Figma export,
 bundled locally at 3× resolution and displayed at 24×24.
 
-Connect Accounts opens an explicit preview notice. Account selection, demo
-connections, scanning, history results, and review actions are future UI
-checkpoints. No social accounts are connected and no scan runs. The page accepts
-`onConnectAccounts` as the integration point for the account-selection flow.
+Connect Accounts opens the account-selection screen. Demo connections, scanning,
+history results, and review actions remain future UI checkpoints. No social
+accounts are connected and no scan runs. The page accepts `onConnectAccounts` as
+the navigation callback.
 
 The explanation scrolls on smaller screens while the primary action remains
 above the bottom tabs. The button follows Figma's 287-point maximum width and
 54-point minimum height while fitting narrower devices.
+
+### Account selection: UI checkpoint
+
+From Footprint, choose Connect Accounts to open Figma's **Footprint - 2**
+(`61:711`). The screen contains five fictional accounts from the design. Public
+and Friends start selected; Video and Photo start unselected. Career profile is
+disabled and marked Coming soon.
+
+- Toggles update local selection state and expose checked/disabled accessibility
+  states. Their original Figma assets render at 48×28 inside 48×44 touch targets.
+- Continue requires at least one available account. With none selected, it is
+  disabled and displays an instruction.
+- Continue currently shows a preview notice with the selected account count.
+  It does not connect an account, request credentials, or start a scan.
+- The back button returns to the Footprint introduction. Android back does the
+  same; pressing it again returns to Check.
+- Choices survive leaving and reopening this screen but reset on app restart.
+  There is no persistent storage or network integration.
+
+Fixtures live in `src/data/demoAccounts.ts`. `AccountSelectionScreen` accepts
+`onBack` and `onContinue(accountIds: readonly DemoAccountId[])`. Continue sends
+only selected, available IDs in fixture order. `previewScanSetup` in `App.tsx` is
+the handoff point for the next UI step. Account avatars and both toggle states
+are original Figma exports bundled locally at 3× resolution. The native OS
+provides its own home indicator.
 
 ## Tasks and implementation status
 
@@ -101,11 +126,12 @@ above the bottom tabs. The button follows Figma's 287-point maximum width and
 | --- | --- | --- |
 | Check a post | Draft input, sharing choices, sample drafts | Input UI complete; analysis/results pending |
 | Personalize checks | My Lens introduction and setup entry | Introduction UI complete; settings wizard pending |
-| Review digital footprint | Footprint introduction and connection entry | Introduction UI complete; accounts/scan/results pending |
+| Review digital footprint | Footprint introduction and demo account selection | Account-selection UI complete; scan/results pending |
 
 Hardcoded content: `src/data/sampleDrafts.ts` contains two fictional draft
-examples; platform and audience options are defined in `src/types/checkPost.ts`.
-The first sample uses the student-meeting example shown in Figma. There are no
+examples, and `src/data/demoAccounts.ts` contains five fictional account rows.
+Platform and audience options are defined in `src/types/checkPost.ts`. The first
+draft sample uses the student-meeting example shown in Figma. There are no
 analysis results, account sessions, or account connections. The app does not yet
 satisfy the fully functional task requirement for the November 3 demo.
 
@@ -120,7 +146,7 @@ satisfy the fully functional task requirement for the November 3 demo.
 - The coding agent must not stage, commit, push, change author settings, rewrite
   history, or add AI coauthor trailers to commits.
 
-Suggested page commit: `Add Footprint intro screen and enable all tabs`.
+Suggested page commit: `Add demo account selection screen for Footprint`.
 
 ### Verification
 
@@ -129,12 +155,12 @@ npm run typecheck
 npx expo export --platform ios --output-dir .expo/verification-ios
 ```
 
-Both checks passed for this page checkpoint, including bundling all eleven local
+Both checks passed for this page checkpoint, including bundling all fourteen local
 image assets. Temporary component smoke checks passed for draft input behavior,
-all three tab destinations, retained draft and sharing selections, setup and
-connection preview callbacks, Android back behavior, inactive-page accessibility,
-and image dimensions. These checks use mocked native primitives and do not
-replace a device test.
+all three tab destinations, retained draft and account choices, default account
+selections, empty-selection validation, the disabled Career option, preview
+callbacks, back navigation, inactive-page accessibility, and image dimensions.
+These checks use mocked native primitives and do not replace a device test.
 
 A device/simulator visual and keyboard check is still required;
 the implementation environment could not connect to the simulator or browser.

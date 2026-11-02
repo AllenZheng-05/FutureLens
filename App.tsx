@@ -3,11 +3,13 @@ import { Alert, BackHandler, Keyboard, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 import type { Tab } from './src/components/BottomTabs';
+import { AccountSelectionScreen } from './src/screens/AccountSelectionScreen';
 import { CheckPostScreen } from './src/screens/CheckPostScreen';
 import { FootprintScreen } from './src/screens/FootprintScreen';
 import { MyLensScreen } from './src/screens/MyLensScreen';
 import { theme } from './src/theme';
 import type { CheckPostRequest } from './src/types/checkPost';
+import type { DemoAccountId } from './src/types/footprint';
 
 const availableTabs: readonly Tab[] = ['Check', 'My Lens', 'Footprint'];
 
@@ -28,31 +30,39 @@ function previewLensSetup() {
   );
 }
 
-function previewAccountConnection() {
+function previewScanSetup(accountIds: readonly DemoAccountId[]) {
   Alert.alert(
-    'Account connection preview',
-    'Account connections and scanning are not available in this preview yet.',
-    [{ text: 'Back to Footprint' }],
+    'Account selection preview',
+    `${accountIds.length} demo account${accountIds.length === 1 ? '' : 's'} selected. The next scan step is not available in this preview yet.`,
+    [{ text: 'Keep choosing' }],
   );
 }
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('Check');
+  const [footprintPage, setFootprintPage] = useState<'intro' | 'accounts'>('intro');
+  const showingFootprint = activeTab === 'Footprint' && footprintPage === 'intro';
+  const showingAccounts = activeTab === 'Footprint' && footprintPage === 'accounts';
 
   function changeTab(tab: Tab) {
     if (!availableTabs.includes(tab)) return;
     Keyboard.dismiss();
+    if (tab === 'Footprint') setFootprintPage('intro');
     setActiveTab(tab);
   }
 
   useEffect(() => {
     if (activeTab === 'Check') return;
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      setActiveTab('Check');
+      if (activeTab === 'Footprint' && footprintPage === 'accounts') {
+        setFootprintPage('intro');
+      } else {
+        setActiveTab('Check');
+      }
       return true;
     });
     return () => subscription.remove();
-  }, [activeTab]);
+  }, [activeTab, footprintPage]);
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
@@ -81,14 +91,24 @@ export default function App() {
           />
         </View>
         <View
-          style={[styles.page, activeTab !== 'Footprint' && styles.hidden]}
-          accessibilityElementsHidden={activeTab !== 'Footprint'}
-          importantForAccessibility={activeTab === 'Footprint' ? 'auto' : 'no-hide-descendants'}
+          style={[styles.page, !showingFootprint && styles.hidden]}
+          accessibilityElementsHidden={!showingFootprint}
+          importantForAccessibility={showingFootprint ? 'auto' : 'no-hide-descendants'}
         >
           <FootprintScreen
-            onConnectAccounts={previewAccountConnection}
+            onConnectAccounts={() => setFootprintPage('accounts')}
             onTabPress={changeTab}
             availableTabs={availableTabs}
+          />
+        </View>
+        <View
+          style={[styles.page, !showingAccounts && styles.hidden]}
+          accessibilityElementsHidden={!showingAccounts}
+          importantForAccessibility={showingAccounts ? 'auto' : 'no-hide-descendants'}
+        >
+          <AccountSelectionScreen
+            onBack={() => setFootprintPage('intro')}
+            onContinue={previewScanSetup}
           />
         </View>
       </View>
