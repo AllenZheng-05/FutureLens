@@ -1,19 +1,22 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Alert } from 'react-native';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
-// Bootstrap only. Replace this entry screen with the first approved Figma page.
-export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text accessibilityRole="header">Future Lens</Text>
-    </View>
+import { CheckPostScreen } from './src/screens/CheckPostScreen';
+import type { CheckPostRequest } from './src/types/checkPost';
+
+function previewCheck(_request: CheckPostRequest) {
+  // Replace this callback with the teammate-owned check/results flow.
+  Alert.alert(
+    'Post checking preview',
+    'Your draft is ready. Post analysis is not available in this preview yet.',
+    [{ text: 'Keep editing' }],
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-});
+export default function App() {
+  return (
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <CheckPostScreen onCheck={previewCheck} />
+    </SafeAreaProvider>
+  );
+}

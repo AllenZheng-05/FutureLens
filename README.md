@@ -16,8 +16,8 @@ npm start
 ```
 
 If you do not use nvm, install Node.js 24 LTS using your preferred method.
-Review and include the generated `package-lock.json` in your manual setup commit
-so the team installs the same dependency versions afterward with `npm ci`.
+The dependency lockfile is checked in. After pulling changes, use `npm ci` to
+install exactly the versions used by the team.
 
 This bootstrap uses Expo SDK 56 with its matching React and React Native versions.
 Use an Expo Go client compatible with SDK 56, or a matching development build.
@@ -33,21 +33,45 @@ npm run android
 
 [HCI-DP3 on Figma](https://www.figma.com/design/UYqm22IgxZxS6G64Ad7T6j/HCI-DP3?node-id=0-1)
 
-The first milestone is only the application bootstrap. The current entry screen
-displays the app name; it does not represent a finished Figma page. Design access
-or screenshots are needed before implementing the actual pages.
+The first page implements **Check - 1** (`9:505`): the title, background, button,
+and bottom tab styling follow Figma. The Figma content region is a placeholder;
+it is filled with an editable draft, platform and audience choices, and two
+fictional sample drafts. Tab icons are original Figma exports bundled locally at
+3× resolution and displayed at their designed 24×24 size. Text currently uses
+the device's system font in place of Inter, which has not been bundled.
+
+### Check a post: UI checkpoint
+
+- Type or paste a draft. Whitespace-only drafts cannot be submitted.
+- Choose a platform and an audience; selected chips update immediately.
+- Load either fictional sample to populate the draft and its sharing choices.
+- Clear the draft with the Clear action.
+- Check with Lens opens an explicit preview notice, not generated analysis.
+- My Lens and Footprint are visible but disabled until their page checkpoints.
+- Drafts and choices live in component state; they are not saved or uploaded.
+
+`CheckPostScreen` accepts `onCheck(request: CheckPostRequest)`. The callback
+receives `{ draft, platform, audience }`, with surrounding draft whitespace
+trimmed. Replace `previewCheck` in `App.tsx` with the teammate-owned analysis and
+results flow; the screen does not implement either.
+
+The screen uses safe-area insets, a scrolling content area, touch targets of at
+least 44 points, and keyboard avoidance on iOS. The tab bar hides while the
+keyboard is visible. Review these interactions on a phone before the live demo.
 
 ## Tasks and implementation status
 
 | Task | Planned interface | Status |
 | --- | --- | --- |
-| Check a post | Draft input, audience choices, interpretation results | Not implemented |
+| Check a post | Draft input, sharing choices, sample drafts | Input UI complete; analysis/results pending |
 | Personalize checks | Goals, concerns, audience and sharing preferences | Not implemented |
 | Review digital footprint | Demo accounts, historical posts, filters and details | Not implemented |
 
-No hardcoded posts, analysis results, account sessions, or account connections are
-included yet. The app does not currently satisfy the fully functional task
-requirement for the November 3 demo.
+Hardcoded content: `src/data/sampleDrafts.ts` contains two fictional draft
+examples; platform and audience options are defined in `src/types/checkPost.ts`.
+The first sample uses the student-meeting example shown in Figma. There are no
+analysis results, account sessions, or account connections. The app does not yet
+satisfy the fully functional task requirement for the November 3 demo.
 
 ## Team workflow
 
@@ -60,7 +84,23 @@ requirement for the November 3 demo.
 - The coding agent must not stage, commit, push, change author settings, rewrite
   history, or add AI coauthor trailers to commits.
 
-Suggested first commit: `Set up React Native app with Expo and TypeScript`.
+Suggested page commit: `Build Check a post input screen from Figma`.
+
+### Verification
+
+```sh
+npm run typecheck
+npx expo export --platform ios --output-dir .expo/verification-ios
+```
+
+Both checks passed for this page checkpoint, including bundling the two local
+navigation icons. A temporary component smoke check also passed for blank draft
+validation, sample loading, selected sharing choices, callback data, clearing,
+and keyboard-driven tab visibility. That check used mocked native primitives;
+it does not replace a device test.
+
+A device/simulator visual and keyboard check is still required;
+the implementation environment could not connect to the simulator or browser.
 
 ## Progress check: November 3
 
