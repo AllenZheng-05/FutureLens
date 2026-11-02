@@ -3,13 +3,14 @@ import { Alert, BackHandler, Keyboard, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 import type { Tab } from './src/components/BottomTabs';
+import { ScanConfirmationSheet } from './src/components/ScanConfirmationSheet';
 import { AccountSelectionScreen } from './src/screens/AccountSelectionScreen';
 import { CheckPostScreen } from './src/screens/CheckPostScreen';
 import { FootprintScreen } from './src/screens/FootprintScreen';
 import { MyLensScreen } from './src/screens/MyLensScreen';
 import { theme } from './src/theme';
 import type { CheckPostRequest } from './src/types/checkPost';
-import type { DemoAccountId } from './src/types/footprint';
+import type { DemoAccountId, DemoScanRequest } from './src/types/footprint';
 
 const availableTabs: readonly Tab[] = ['Check', 'My Lens', 'Footprint'];
 
@@ -30,31 +31,43 @@ function previewLensSetup() {
   );
 }
 
-function previewScanSetup(accountIds: readonly DemoAccountId[]) {
-  Alert.alert(
-    'Account selection preview',
-    `${accountIds.length} demo account${accountIds.length === 1 ? '' : 's'} selected. The next scan step is not available in this preview yet.`,
-    [{ text: 'Keep choosing' }],
-  );
-}
-
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('Check');
   const [footprintPage, setFootprintPage] = useState<'intro' | 'accounts'>('intro');
+  const [scanAccountIds, setScanAccountIds] = useState<readonly DemoAccountId[]>([]);
+  const [showScanConfirmation, setShowScanConfirmation] = useState(false);
   const showingFootprint = activeTab === 'Footprint' && footprintPage === 'intro';
   const showingAccounts = activeTab === 'Footprint' && footprintPage === 'accounts';
 
   function changeTab(tab: Tab) {
     if (!availableTabs.includes(tab)) return;
     Keyboard.dismiss();
+    setShowScanConfirmation(false);
     if (tab === 'Footprint') setFootprintPage('intro');
     setActiveTab(tab);
+  }
+
+  function confirmSelectedAccounts(accountIds: readonly DemoAccountId[]) {
+    if (accountIds.length === 0) return;
+    setScanAccountIds([...accountIds]);
+    setShowScanConfirmation(true);
+  }
+
+  function previewScan(request: DemoScanRequest) {
+    setShowScanConfirmation(false);
+    Alert.alert(
+      'Read-only scan preview',
+      `${request.accountIds.length} demo account${request.accountIds.length === 1 ? '' : 's'} selected. Scanning is not available in this preview yet.`,
+      [{ text: 'Keep choosing' }],
+    );
   }
 
   useEffect(() => {
     if (activeTab === 'Check') return;
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (activeTab === 'Footprint' && footprintPage === 'accounts') {
+      if (showScanConfirmation) {
+        setShowScanConfirmation(false);
+      } else if (activeTab === 'Footprint' && footprintPage === 'accounts') {
         setFootprintPage('intro');
       } else {
         setActiveTab('Check');
@@ -62,7 +75,7 @@ export default function App() {
       return true;
     });
     return () => subscription.remove();
-  }, [activeTab, footprintPage]);
+  }, [activeTab, footprintPage, showScanConfirmation]);
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
@@ -108,10 +121,16 @@ export default function App() {
         >
           <AccountSelectionScreen
             onBack={() => setFootprintPage('intro')}
-            onContinue={previewScanSetup}
+            onContinue={confirmSelectedAccounts}
           />
         </View>
       </View>
+      <ScanConfirmationSheet
+        visible={showScanConfirmation}
+        accountIds={scanAccountIds}
+        onCancel={() => setShowScanConfirmation(false)}
+        onAllow={previewScan}
+      />
     </SafeAreaProvider>
   );
 }

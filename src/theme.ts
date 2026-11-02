@@ -16,6 +16,7 @@ export const theme = {
     border: '#E1E4EE',
     disabledFill: '#D5D8E6',
     disabledText: '#8A8FAA',
+    backdrop: 'rgba(27, 31, 59, 0.4)',
   },
   space: { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 },
   radius: { button: 14, card: 16, chip: 24 },

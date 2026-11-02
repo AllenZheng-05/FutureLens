@@ -7,3 +7,9 @@ export type DemoAccount = {
   available: boolean;
   initiallySelected: boolean;
 };
+
+// UI preview settings only; this does not grant access to any external service.
+export type DemoScanRequest = {
+  accountIds: readonly DemoAccountId[];
+  access: 'read-only';
+};

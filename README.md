@@ -106,7 +106,7 @@ disabled and marked Coming soon.
   states. Their original Figma assets render at 48×28 inside 48×44 touch targets.
 - Continue requires at least one available account. With none selected, it is
   disabled and displays an instruction.
-- Continue currently shows a preview notice with the selected account count.
+- Continue opens the read-only confirmation sheet for the selected demo accounts.
   It does not connect an account, request credentials, or start a scan.
 - The back button returns to the Footprint introduction. Android back does the
   same; pressing it again returns to Check.
@@ -115,10 +115,29 @@ disabled and marked Coming soon.
 
 Fixtures live in `src/data/demoAccounts.ts`. `AccountSelectionScreen` accepts
 `onBack` and `onContinue(accountIds: readonly DemoAccountId[])`. Continue sends
-only selected, available IDs in fixture order. `previewScanSetup` in `App.tsx` is
-the handoff point for the next UI step. Account avatars and both toggle states
-are original Figma exports bundled locally at 3× resolution. The native OS
-provides its own home indicator.
+only selected, available IDs in fixture order. `confirmSelectedAccounts` in
+`App.tsx` opens the confirmation sheet with that selection. Account avatars and
+both toggle states are original Figma exports bundled locally at 3× resolution.
+The native OS provides its own home indicator.
+
+### Read-only scan confirmation: UI checkpoint
+
+Account selection → Continue opens Figma's **Footprint - 3** (`76:854`) as a
+native modal bottom sheet. It includes the read-only question, two permission
+rows, Allow and Cancel actions, the sheet handle, and a dimmed backdrop.
+
+- A visible demo label includes the selected account count and states that no
+  real access is granted.
+- Cancel, tapping the backdrop, the accessibility escape action, and Android's
+  back action dismiss the sheet without changing account choices.
+- Allow closes the sheet and shows a scan preview notice. It does not grant real
+  permissions, connect an account, or run a scan.
+- Empty account requests cannot proceed. The sheet content scrolls when needed
+  and includes safe-area bottom padding.
+
+`ScanConfirmationSheet.onAllow` receives a `DemoScanRequest` containing a copy of
+the selected IDs and `access: 'read-only'`. `previewScan` in `App.tsx` is the
+integration point for the next UI step. No permission approval is persisted.
 
 ## Tasks and implementation status
 
@@ -126,7 +145,7 @@ provides its own home indicator.
 | --- | --- | --- |
 | Check a post | Draft input, sharing choices, sample drafts | Input UI complete; analysis/results pending |
 | Personalize checks | My Lens introduction and setup entry | Introduction UI complete; settings wizard pending |
-| Review digital footprint | Footprint introduction and demo account selection | Account-selection UI complete; scan/results pending |
+| Review digital footprint | Introduction, account selection, read-only confirmation | Confirmation UI complete; scan/results pending |
 
 Hardcoded content: `src/data/sampleDrafts.ts` contains two fictional draft
 examples, and `src/data/demoAccounts.ts` contains five fictional account rows.
@@ -146,7 +165,7 @@ satisfy the fully functional task requirement for the November 3 demo.
 - The coding agent must not stage, commit, push, change author settings, rewrite
   history, or add AI coauthor trailers to commits.
 
-Suggested page commit: `Add demo account selection screen for Footprint`.
+Suggested page commit: `Add read-only scan confirmation sheet`.
 
 ### Verification
 
@@ -158,8 +177,9 @@ npx expo export --platform ios --output-dir .expo/verification-ios
 Both checks passed for this page checkpoint, including bundling all fourteen local
 image assets. Temporary component smoke checks passed for draft input behavior,
 all three tab destinations, retained draft and account choices, default account
-selections, empty-selection validation, the disabled Career option, preview
-callbacks, back navigation, inactive-page accessibility, and image dimensions.
+selections, empty-selection validation, the disabled Career option, confirmation
+dismissal paths, copied read-only callback data, preview callbacks, back
+navigation, inactive-page accessibility, and image dimensions.
 These checks use mocked native primitives and do not replace a device test.
 
 A device/simulator visual and keyboard check is still required;
