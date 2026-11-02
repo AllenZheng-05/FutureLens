@@ -4,11 +4,12 @@ import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-c
 
 import type { Tab } from './src/components/BottomTabs';
 import { CheckPostScreen } from './src/screens/CheckPostScreen';
+import { FootprintScreen } from './src/screens/FootprintScreen';
 import { MyLensScreen } from './src/screens/MyLensScreen';
 import { theme } from './src/theme';
 import type { CheckPostRequest } from './src/types/checkPost';
 
-const availableTabs: readonly Tab[] = ['Check', 'My Lens'];
+const availableTabs: readonly Tab[] = ['Check', 'My Lens', 'Footprint'];
 
 function previewCheck(_request: CheckPostRequest) {
   // Replace this callback with the teammate-owned check/results flow.
@@ -24,6 +25,14 @@ function previewLensSetup() {
     'Lens setup preview',
     'Goal selection is not available in this preview yet.',
     [{ text: 'Back to My Lens' }],
+  );
+}
+
+function previewAccountConnection() {
+  Alert.alert(
+    'Account connection preview',
+    'Account connections and scanning are not available in this preview yet.',
+    [{ text: 'Back to Footprint' }],
   );
 }
 
@@ -67,6 +76,17 @@ export default function App() {
         >
           <MyLensScreen
             onStartSetup={previewLensSetup}
+            onTabPress={changeTab}
+            availableTabs={availableTabs}
+          />
+        </View>
+        <View
+          style={[styles.page, activeTab !== 'Footprint' && styles.hidden]}
+          accessibilityElementsHidden={activeTab !== 'Footprint'}
+          importantForAccessibility={activeTab === 'Footprint' ? 'auto' : 'no-hide-descendants'}
+        >
+          <FootprintScreen
+            onConnectAccounts={previewAccountConnection}
             onTabPress={changeTab}
             availableTabs={availableTabs}
           />

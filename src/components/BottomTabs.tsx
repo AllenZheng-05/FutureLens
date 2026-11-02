@@ -45,7 +45,9 @@ export function BottomTabs({ activeTab, onTabPress, availableTabs = ['Check'] }:
                   ? selected
                     ? require('../../assets/icons/check.png')
                     : require('../../assets/icons/check-inactive.png')
-                  : require('../../assets/icons/footprint.png')}
+                  : selected
+                    ? require('../../assets/icons/footprint-active.png')
+                    : require('../../assets/icons/footprint.png')}
                 style={styles.icon}
                 resizeMode="contain"
               />

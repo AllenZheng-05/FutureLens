@@ -47,8 +47,7 @@ the device's system font in place of Inter, which has not been bundled.
 - Load either fictional sample to populate the draft and its sharing choices.
 - Clear the draft with the Clear action.
 - Check with Lens opens an explicit preview notice, not generated analysis.
-- Switch between Check and My Lens using the bottom tabs. Footprint remains
-  disabled until its page checkpoint.
+- Switch between Check, My Lens, and Footprint using the bottom tabs.
 - Drafts and choices survive tab changes. They live only in component state and
   reset when the app restarts; they are not saved or uploaded.
 
@@ -75,9 +74,26 @@ selection, concerns, sharing rules, and preference saving remain future page
 checkpoints. `MyLensScreen.onStartSetup` is the handoff point for that wizard;
 no preferences are currently saved or applied to post checks.
 
-The app keeps both implemented pages mounted, so changing tabs preserves the
+The app keeps all three implemented pages mounted, so changing tabs preserves the
 draft and sharing selections. Inactive pages are hidden from accessibility
-navigation. Android's hardware back action returns from My Lens to Check.
+navigation. Android's hardware back action returns from My Lens or Footprint to
+Check.
+
+### Footprint introduction: UI checkpoint
+
+The Footprint tab implements Figma's **Footprint - 1** (`60:676`): its title,
+accent-colored subtitle, centered explanation, Connect Accounts action, and
+selected tab state. The selected Footprint icon is an original Figma export,
+bundled locally at 3× resolution and displayed at 24×24.
+
+Connect Accounts opens an explicit preview notice. Account selection, demo
+connections, scanning, history results, and review actions are future UI
+checkpoints. No social accounts are connected and no scan runs. The page accepts
+`onConnectAccounts` as the integration point for the account-selection flow.
+
+The explanation scrolls on smaller screens while the primary action remains
+above the bottom tabs. The button follows Figma's 287-point maximum width and
+54-point minimum height while fitting narrower devices.
 
 ## Tasks and implementation status
 
@@ -85,7 +101,7 @@ navigation. Android's hardware back action returns from My Lens to Check.
 | --- | --- | --- |
 | Check a post | Draft input, sharing choices, sample drafts | Input UI complete; analysis/results pending |
 | Personalize checks | My Lens introduction and setup entry | Introduction UI complete; settings wizard pending |
-| Review digital footprint | Demo accounts, historical posts, filters and details | Not implemented |
+| Review digital footprint | Footprint introduction and connection entry | Introduction UI complete; accounts/scan/results pending |
 
 Hardcoded content: `src/data/sampleDrafts.ts` contains two fictional draft
 examples; platform and audience options are defined in `src/types/checkPost.ts`.
@@ -104,7 +120,7 @@ satisfy the fully functional task requirement for the November 3 demo.
 - The coding agent must not stage, commit, push, change author settings, rewrite
   history, or add AI coauthor trailers to commits.
 
-Suggested page commit: `Add My Lens intro screen and tab navigation`.
+Suggested page commit: `Add Footprint intro screen and enable all tabs`.
 
 ### Verification
 
@@ -113,11 +129,12 @@ npm run typecheck
 npx expo export --platform ios --output-dir .expo/verification-ios
 ```
 
-Both checks passed for this page checkpoint, including bundling all ten local
+Both checks passed for this page checkpoint, including bundling all eleven local
 image assets. Temporary component smoke checks passed for draft input behavior,
-tab navigation, retained draft and sharing selections, the setup preview callback,
-Android back behavior, inactive-page accessibility, and image dimensions. These
-checks use mocked native primitives and do not replace a device test.
+all three tab destinations, retained draft and sharing selections, setup and
+connection preview callbacks, Android back behavior, inactive-page accessibility,
+and image dimensions. These checks use mocked native primitives and do not
+replace a device test.
 
 A device/simulator visual and keyboard check is still required;
 the implementation environment could not connect to the simulator or browser.

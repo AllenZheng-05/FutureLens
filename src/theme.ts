@@ -6,6 +6,7 @@ export const theme = {
     ink: '#1B1F3B',
     heading: '#000000',
     secondaryText: '#6B7280',
+    accentText: '#7C8CE6',
     muted: '#616883',
     inactive: '#9CA1BD',
     primary: '#4B4FD9',
