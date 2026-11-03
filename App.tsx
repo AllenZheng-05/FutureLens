@@ -12,19 +12,31 @@ import { MyLensScreen } from './src/screens/MyLensScreen';
 import { GoalSelectionScreen } from './src/screens/GoalSelectionScreen';
 import { MultiSelectStepScreen } from './src/screens/MultiSelectStepScreen';
 import { ScanProgressScreen } from './src/screens/ScanProgressScreen';
+import { SharingRulesScreen } from './src/screens/SharingRulesScreen';
 import { theme } from './src/theme';
 import { demoFootprintFindings } from './src/data/demoFootprintFindings';
 import { goalOptions } from './src/data/goalOptions';
-import { perspectiveOptions, topicOptions } from './src/data/lensOptions';
+import { accountOptions, perspectiveOptions, sharingAudienceOptions, topicOptions } from './src/data/lensOptions';
 import type { CheckPostRequest } from './src/types/checkPost';
 import type { DemoAccountId, DemoScanRequest } from './src/types/footprint';
-import type { GoalId, LensOption, PerspectiveId, TopicId } from './src/types/lens';
+import type { GoalId, LensOption, PerspectiveId, SharingRules, TopicId } from './src/types/lens';
 
-type LensPage = 'intro' | 'goals' | 'perspectives' | 'topics';
+type LensPage = 'intro' | 'goals' | 'perspectives' | 'topics' | 'sharing';
 
 function labelsFor<T extends string>(options: readonly LensOption<T>[], ids: readonly T[]) {
   const labels = options.filter(option => ids.includes(option.id)).map(option => option.label);
   return labels.length > 0 ? labels.join(', ') : 'Skipped';
+}
+
+function describeRules(rules: SharingRules, topicIds: readonly TopicId[]) {
+  if (topicIds.length === 0) return 'None';
+  return accountOptions.map(account => {
+    const lines = topicOptions.filter(topic => topicIds.includes(topic.id)).map(topic => {
+      const audience = sharingAudienceOptions.find(option => option.id === rules[account.id][topic.id]);
+      return `${topic.label}: ${audience?.label}`;
+    });
+    return `${account.label}\n${lines.join('\n')}`;
+  }).join('\n\n');
 }
 
 const availableTabs: readonly Tab[] = ['Check', 'My Lens', 'Footprint'];
@@ -43,6 +55,7 @@ export default function App() {
   const [lensPage, setLensPage] = useState<LensPage>('intro');
   const [lensGoalIds, setLensGoalIds] = useState<readonly GoalId[]>([]);
   const [lensPerspectiveIds, setLensPerspectiveIds] = useState<readonly PerspectiveId[]>([]);
+  const [lensTopicIds, setLensTopicIds] = useState<readonly TopicId[]>([]);
   const [footprintPage, setFootprintPage] = useState<'intro' | 'accounts' | 'scan' | 'results'>('intro');
   const [scanAccountIds, setScanAccountIds] = useState<readonly DemoAccountId[]>([]);
   const [showScanConfirmation, setShowScanConfirmation] = useState(false);
@@ -54,6 +67,7 @@ export default function App() {
   const showingGoals = activeTab === 'My Lens' && lensPage === 'goals';
   const showingPerspectives = activeTab === 'My Lens' && lensPage === 'perspectives';
   const showingTopics = activeTab === 'My Lens' && lensPage === 'topics';
+  const showingSharing = activeTab === 'My Lens' && lensPage === 'sharing';
 
   function changeTab(tab: Tab) {
     if (!availableTabs.includes(tab)) return;
@@ -86,14 +100,20 @@ export default function App() {
     setLensPage('topics');
   }
 
-  // Placeholder until Step 4 ("Who should see what?") is built.
-  function previewLensSetup(topicIds: readonly TopicId[]) {
+  function continueFromTopics(topicIds: readonly TopicId[]) {
+    setLensTopicIds([...topicIds]);
+    setLensPage('sharing');
+  }
+
+  // Placeholder until the "Your Lens" summary is built.
+  function previewLensSetup(rules: SharingRules) {
     Alert.alert(
       'Lens setup preview',
       `Goals: ${labelsFor(goalOptions, lensGoalIds)}\n`
         + `Perspectives: ${labelsFor(perspectiveOptions, lensPerspectiveIds)}\n`
-        + `Watching for: ${labelsFor(topicOptions, topicIds)}\n\n`
-        + 'Sharing rules (Step 4) are not available in this preview yet.',
+        + `Watching for: ${labelsFor(topicOptions, lensTopicIds)}\n\n`
+        + `Sharing rules:\n${describeRules(rules, lensTopicIds)}\n\n`
+        + 'The Your Lens summary is not available in this preview yet.',
       [
         { text: 'Keep editing', style: 'cancel' },
         { text: 'Back to My Lens', onPress: () => setLensPage('intro') },
@@ -106,6 +126,8 @@ export default function App() {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       if (showScanConfirmation) {
         setShowScanConfirmation(false);
+      } else if (activeTab === 'My Lens' && lensPage === 'sharing') {
+        setLensPage('topics');
       } else if (activeTab === 'My Lens' && lensPage === 'topics') {
         setLensPage('perspectives');
       } else if (activeTab === 'My Lens' && lensPage === 'perspectives') {
@@ -215,8 +237,19 @@ export default function App() {
             backLabel="Back to perspectives"
             skipLabel="Skip topic selection for now"
             onBack={() => setLensPage('perspectives')}
-            onSkip={() => previewLensSetup([])}
-            onContinue={previewLensSetup}
+            onSkip={() => continueFromTopics([])}
+            onContinue={continueFromTopics}
+          />
+        </View>
+        <View
+          style={[styles.page, !showingSharing && styles.hidden]}
+          accessibilityElementsHidden={!showingSharing}
+          importantForAccessibility={showingSharing ? 'auto' : 'no-hide-descendants'}
+        >
+          <SharingRulesScreen
+            topicIds={lensTopicIds}
+            onBack={() => setLensPage('topics')}
+            onReview={previewLensSetup}
           />
         </View>
         <View
