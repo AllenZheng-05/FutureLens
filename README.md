@@ -19,8 +19,10 @@ If you do not use nvm, install Node.js 24 LTS using your preferred method.
 The dependency lockfile is checked in. After pulling changes, use `npm ci` to
 install exactly the versions used by the team.
 
-This bootstrap uses Expo SDK 56 with its matching React and React Native versions.
-Use an Expo Go client compatible with SDK 56, or a matching development build.
+The project uses Expo SDK 58 (React Native 0.88, React 19.3). The App Store and
+Play Store versions of Expo Go run only the latest SDK, so a phone showing
+"incompatible with this version of Expo Go" means the project and the app are on
+different SDKs. After pulling the SDK 58 upgrade, run `npm ci`.
 The iOS Simulator requires Xcode; the Android Emulator requires Android Studio.
 
 ```sh
@@ -28,6 +30,54 @@ npm run ios
 # Or, with an Android emulator configured:
 npm run android
 ```
+
+### Signing in to Expo (computer and phone)
+
+Expo Go only opens the project when the Expo CLI on your computer **and** the
+Expo Go app on your phone are signed in to the **same Expo account**. Otherwise
+the terminal logs errors such as "You need to be signed in to Expo Go and Expo
+CLI" or "You're signed in to Expo Go as … but not signed in to Expo CLI".
+
+**1. Computer (Expo CLI).** Use either method, then check the result:
+
+```sh
+npx expo whoami   # should print your Expo username
+```
+
+- **Browser login** (works for accounts created with Google). On Windows, Expo
+  CLI's automatic browser launch can crash on the `&` characters in the login
+  URL, which also stops the local callback, so Approve then fails. Turn off the
+  automatic launch and open the printed link yourself:
+
+  ```powershell
+  $env:BROWSER = "none"
+  npx expo login
+  ```
+
+  Copy the new `https://expo.dev/login?...` link into a browser, sign in, and
+  choose Approve while the terminal is still waiting. Each link works only for
+  the login attempt that printed it.
+
+- **Username and password.** Accounts created with Google can add a password
+  with expo.dev's "Forgot password?" flow. Then sign in without a browser:
+
+  ```sh
+  npx expo login --no-browser
+  ```
+
+An `EXPO_TOKEN` environment variable overrides both methods. A robot-user token
+signs the CLI in as the robot (`whoami` shows "(robot)"), not as the account
+used in Expo Go, so remove any `EXPO_TOKEN` and open a new terminal before
+signing in. Never commit tokens.
+
+**2. Phone (Expo Go).** Open Expo Go, tap the account icon, and sign in with the
+same account, using Continue with Google if that is how the account was created.
+
+**3. Start the app.** Run `npm start` in the signed-in terminal. Scan the QR code
+with the iPhone Camera or from inside Expo Go on Android, or choose "Enter URL
+manually" in Expo Go and type the `exp://…:8081` address shown in the terminal.
+If the phone cannot reach the computer (common on school Wi-Fi), use
+`npx expo start --tunnel`.
 
 ## Design reference
 
@@ -69,32 +119,74 @@ Illustration layers are original Figma exports, bundled locally at 3× resolutio
 and placed in the design's original order and dimensions. The repeated green
 dot shares one identical source asset.
 
-Set up my Lens opens the basic goal-selection page. `MyLensScreen.onStartSetup`
-is its navigation callback. No preferences are saved or applied to post checks.
+Set up my Lens starts the four-step setup flow below. `MyLensScreen.onStartSetup`
+is its navigation callback. Once a Lens has been saved, the tab shows that Lens
+instead of the introduction (see "Saved Lens" below).
 
-### My Lens goal selection: final UI checkpoint
+### My Lens setup flow
 
-My Lens → Set up my Lens opens **Lens - 2** (`32:498`), implemented from the
-supplied screenshot and previously retrieved Figma layout metadata. It includes
-the first-step progress indicator, question, five goal cards, Skip, Next, and back
-navigation.
+My Lens → Set up my Lens runs the full "Set up My Lens" task flow from the Figma
+board. Every step has a four-segment progress bar that fills completed steps,
+header Back, and Android back.
 
-- Goal cards support multiple selections and deselection, with checked states
-  exposed to accessibility tools.
-- Next is disabled until at least one goal is selected. It shows the selected
-  labels in a preview notice; it does not advance through a complete wizard or
-  apply a personalization algorithm.
-- Skip, header Back, and Android back return to the My Lens introduction.
-- Draft choices survive closing and reopening the page, but reset on app restart.
-  Skipping does not save or apply them.
-- The selected goals do not change the Footprint dashboard's preset goal-match
-  flags or the teammate-owned post-check task.
+1. **What are you working toward?** (**Lens - 2**, `32:498`): five goals.
+2. **Whose eyes worry you most?** Future employers, Voters & press, Admissions
+   officers, Strangers with no context, Family, Old rivals.
+3. **What should Lens watch for?** Politics, Jokes & sarcasm, Partying, Rants
+   about people, Location, Opinions I may change.
+4. **Who should see what?** A Public account / Friends account switch, then a
+   Public / Friends / Private control for each topic chosen in Step 3. Each
+   account keeps its own rules, starting from fixed demo defaults.
+5. **Your Lens** summary: Goals, Perspectives, Watching for, and Sharing rules
+   cards, each with Edit, followed by Save my Lens.
+6. **Your Lens is set**: "Checks now focus on …", worded from the chosen goals,
+   with Done and Try it on a draft.
 
-`src/data/goalOptions.ts` contains the five fixed choices from the screenshot.
-`GoalSelectionScreen` accepts `onBack`, `onSkip`, and
-`onContinue(goalIds: readonly GoalId[])`; selected IDs are passed in option order.
-`previewGoalSelection` in `App.tsx` supplies the current preview feedback. Further
-setup steps, persistence, and personalized analysis are outside this UI scope.
+Behavior:
+
+- Steps 1–3 are multi-select: tap to select, tap again to deselect. Next stays
+  disabled until something is selected. Checked states are exposed to
+  accessibility tools.
+- Skip for now on Step 1 returns to the introduction. On Steps 2 and 3 it moves
+  to the next step with nothing selected; the summary then shows "Skipped".
+- Choices are kept when moving back and forth between steps. Sharing rules are
+  stored for all six topics, so changing Step 3 or switching accounts does not
+  lose rules already set. If no topics were chosen, Step 4 says so and Review
+  still works.
+- Edit on a summary card opens that step with the saved choices selected. Next
+  (or Review on Step 4) saves the change and returns to the summary; header Back
+  and Android back cancel without changes.
+- Save my Lens stores the choices and opens the confirmation. Done (and Android
+  back) returns to the My Lens tab; Try it on a draft opens the Check tab.
+
+**Saved Lens.** After saving, the My Lens tab shows "My Future Lens": a "Your Lens
+is on" card with the focus line, then the saved goals, perspectives, and topics
+as tags. Edit my Lens opens the summary, and Back from it returns to the tab.
+Changes made there stay drafts until Save my Lens is pressed again.
+
+The Lens lives in app state for the session only and resets when the app
+restarts. It is not yet applied to post checks: the Figma's "Based on: …" line
+on Check results depends on the teammate-owned results flow. It also does not
+change the Footprint dashboard's preset goal-match flags.
+
+Code layout:
+
+- `src/data/goalOptions.ts`: the five goals, and `describeLensFocus` for the
+  "Checks now focus on …" wording.
+- `src/data/lensOptions.ts`: perspective and topic choices, account and audience
+  labels, and the default sharing rules.
+- `src/types/lens.ts`: IDs, `SharingRules`, and `SavedLens`.
+- Screens: `MultiSelectStepScreen` (shared by Steps 1–3; `GoalSelectionScreen`
+  wraps it for Step 1), `SharingRulesScreen`, `LensSummaryScreen`, and
+  `LensSetScreen`. `MyLensScreen` takes an optional `savedLens` summary and
+  `onEditLens`.
+- Shared components: `StepProgress`, `OptionCard` with `CheckMark`,
+  `TextButton`, `SegmentedControl` (pill and compact variants), `RuleCard`,
+  `TagPill`, `SummaryCard`, and `SuccessBadge`. The check mark is drawn with
+  Views, with no SVG dependency.
+- `App.tsx` owns navigation (`lensPage`), the draft and saved Lens, Edit mode,
+  and one back handler shared by header Back and Android back. Step pages
+  remount on Edit so they start from the saved choices.
 
 The app keeps implemented pages mounted, so changing tabs preserves the draft
 and sharing selections. Inactive pages are hidden from accessibility navigation.
@@ -211,7 +303,7 @@ goal-match toggle, sample finding cards, and Footprint tab state.
 | Task | Planned interface | Status |
 | --- | --- | --- |
 | Check a post | Draft input, sharing choices, sample drafts | Input UI complete; analysis/results pending |
-| Personalize checks | My Lens introduction and basic goal selection | Goal-selection UI complete; further setup outside scope |
+| Set up My Lens | Introduction, four setup steps, summary with Edit, confirmation, saved Lens | Works end to end; not yet applied to Check results |
 | Review digital footprint | Introduction, account selection, confirmation, demo progress/results | Mock results dashboard UI complete |
 
 Hardcoded content: `src/data/sampleDrafts.ts` contains two fictional draft
@@ -219,11 +311,13 @@ examples, `src/data/demoAccounts.ts` contains five fictional account rows, and
 `src/data/demoScan.ts` supplies the fictional post count and timed UI phases.
 `src/data/demoFootprintFindings.ts` contains 12 fictional findings, preset goal
 matches, risk labels, filter names, and the demo site count.
-`src/data/goalOptions.ts` supplies the five fixed goal choices.
+`src/data/goalOptions.ts` supplies the five fixed goal choices, and
+`src/data/lensOptions.ts` supplies the six perspectives, six topics, account and
+audience labels, and default sharing rules.
 Platform and audience options are defined in `src/types/checkPost.ts`. The first
 draft sample uses the student-meeting example shown in Figma. There is no
-generated analysis, account session, or real account connection. The app does not yet
-satisfy the fully functional task requirement for the November 3 demo.
+generated analysis, account session, or real account connection. Set up My Lens
+is the task that works end to end for the November 3 demo.
 
 ## Team workflow
 
@@ -236,14 +330,12 @@ satisfy the fully functional task requirement for the November 3 demo.
 - The coding agent must not stage, commit, push, change author settings, rewrite
   history, or add AI coauthor trailers to commits.
 
-Suggested final UI commit: `Add My Lens goal selection UI`.
+### Scope
 
-### UI stopping point reached
-
-This goal-selection page is the final agreed UI checkpoint. After manually
-reviewing and committing this batch, stop UI development for this checkpoint.
-No further UI commits are planned. Additional wizards, finding-detail flows,
-real social integrations, and analysis are outside the agreed UI scope.
+The original UI checkpoints ended at goal selection. The full My Lens setup flow
+was then built in reviewed increments (shared components, Steps 2–3, Step 4,
+summary, confirmation and saved Lens), each committed manually. Footprint
+finding-detail flows, real social integrations, and analysis remain open.
 
 Task 1's analysis, interpretation/results generation, and feature integration
 belong to the teammate. `previewCheck` remains a placeholder wired through
@@ -255,10 +347,22 @@ checkpoints.
 ```sh
 npm run typecheck
 npx expo export --platform ios --output-dir .expo/verification-ios
+npx expo-doctor
 ```
 
-Both checks passed for this page checkpoint, including bundling all sixteen local
-image assets. Temporary component smoke checks passed for draft input behavior,
+On SDK 58, all three pass: the typecheck is clean, the iOS bundle builds with all
+sixteen local image assets, and expo-doctor passes 20/20 checks.
+
+My Lens smoke checks (run outside the repository with react-test-renderer and
+mocked native primitives) passed for every shared component and for the full
+flow driven through `App.tsx`: multi-select and deselect on Steps 1–3, disabled
+Next, progress per step, default and changed sharing rules per account, adding a
+topic after setting rules, the empty Step 4 state, summary contents, Edit and
+cancel for each card, Skip while editing, Save, the confirmation wording, Done,
+Try it on a draft, the saved My Lens tab, and header and Android back across all
+pages.
+
+Earlier checkpoints also passed both checks. Temporary component smoke checks passed for draft input behavior,
 all three tab destinations, retained draft and account choices, default account
 selections, empty-selection validation, the disabled Career option, confirmation
 dismissal paths, copied read-only callback data, preview callbacks, back
@@ -284,8 +388,10 @@ The separate 2–3 slide presentation should cover the title, mobile platform an
 technologies, current status and development timeline, hardcoded data, the three
 tasks, and the GitHub repository.
 
-UI development stops after the goal-selection page's manual commit. The teammate
-separately connects the working post-check task. Rehearse the live demo after
-both contributions are integrated.
+Set up My Lens works end to end and is the planned live-demo task: intro → four
+steps → Your Lens summary (with Edit) → Save my Lens → Your Lens is set → saved
+Lens on the My Lens tab. The teammate separately connects the post-check task.
+Sign in to Expo on both the computer and the phone before presenting (see
+"Signing in to Expo"), and rehearse the demo on the phone that will be used.
 
 Repository: https://github.com/AllenZheng-05/FutureLens
