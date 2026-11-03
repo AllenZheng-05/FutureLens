@@ -69,10 +69,32 @@ Illustration layers are original Figma exports, bundled locally at 3× resolutio
 and placed in the design's original order and dimensions. The repeated green
 dot shares one identical source asset.
 
-Set up my Lens opens an explicit preview notice. Goal selection, audience
-selection, concerns, sharing rules, and preference saving remain future page
-checkpoints. `MyLensScreen.onStartSetup` is the handoff point for that wizard;
-no preferences are currently saved or applied to post checks.
+Set up my Lens opens the basic goal-selection page. `MyLensScreen.onStartSetup`
+is its navigation callback. No preferences are saved or applied to post checks.
+
+### My Lens goal selection: final UI checkpoint
+
+My Lens → Set up my Lens opens **Lens - 2** (`32:498`), implemented from the
+supplied screenshot and previously retrieved Figma layout metadata. It includes
+the first-step progress indicator, question, five goal cards, Skip, Next, and back
+navigation.
+
+- Goal cards support multiple selections and deselection, with checked states
+  exposed to accessibility tools.
+- Next is disabled until at least one goal is selected. It shows the selected
+  labels in a preview notice; it does not advance through a complete wizard or
+  apply a personalization algorithm.
+- Skip, header Back, and Android back return to the My Lens introduction.
+- Draft choices survive closing and reopening the page, but reset on app restart.
+  Skipping does not save or apply them.
+- The selected goals do not change the Footprint dashboard's preset goal-match
+  flags or the teammate-owned post-check task.
+
+`src/data/goalOptions.ts` contains the five fixed choices from the screenshot.
+`GoalSelectionScreen` accepts `onBack`, `onSkip`, and
+`onContinue(goalIds: readonly GoalId[])`; selected IDs are passed in option order.
+`previewGoalSelection` in `App.tsx` supplies the current preview feedback. Further
+setup steps, persistence, and personalized analysis are outside this UI scope.
 
 The app keeps implemented pages mounted, so changing tabs preserves the draft
 and sharing selections. Inactive pages are hidden from accessibility navigation.
@@ -189,7 +211,7 @@ goal-match toggle, sample finding cards, and Footprint tab state.
 | Task | Planned interface | Status |
 | --- | --- | --- |
 | Check a post | Draft input, sharing choices, sample drafts | Input UI complete; analysis/results pending |
-| Personalize checks | My Lens introduction and setup entry | Introduction UI complete; settings wizard pending |
+| Personalize checks | My Lens introduction and basic goal selection | Goal-selection UI complete; further setup outside scope |
 | Review digital footprint | Introduction, account selection, confirmation, demo progress/results | Mock results dashboard UI complete |
 
 Hardcoded content: `src/data/sampleDrafts.ts` contains two fictional draft
@@ -197,6 +219,7 @@ examples, `src/data/demoAccounts.ts` contains five fictional account rows, and
 `src/data/demoScan.ts` supplies the fictional post count and timed UI phases.
 `src/data/demoFootprintFindings.ts` contains 12 fictional findings, preset goal
 matches, risk labels, filter names, and the demo site count.
+`src/data/goalOptions.ts` supplies the five fixed goal choices.
 Platform and audience options are defined in `src/types/checkPost.ts`. The first
 draft sample uses the student-meeting example shown in Figma. There is no
 generated analysis, account session, or real account connection. The app does not yet
@@ -213,13 +236,14 @@ satisfy the fully functional task requirement for the November 3 demo.
 - The coding agent must not stage, commit, push, change author settings, rewrite
   history, or add AI coauthor trailers to commits.
 
-Suggested page commit: `Add mock Footprint results dashboard`.
+Suggested final UI commit: `Add My Lens goal selection UI`.
 
-### Remaining UI scope and stopping point
+### UI stopping point reached
 
-After the results dashboard is manually committed, the only remaining UI
-checkpoint is a basic My Lens goal-selection page (**Lens - 2**). Stop after
-that page; further wizards and finding-detail flows are outside the agreed scope.
+This goal-selection page is the final agreed UI checkpoint. After manually
+reviewing and committing this batch, stop UI development for this checkpoint.
+No further UI commits are planned. Additional wizards, finding-detail flows,
+real social integrations, and analysis are outside the agreed UI scope.
 
 Task 1's analysis, interpretation/results generation, and feature integration
 belong to the teammate. `previewCheck` remains a placeholder wired through
@@ -242,8 +266,10 @@ navigation, inactive-page accessibility, and image dimensions. Controlled-timer
 checks also passed for demo phases, completion, replay, cancellation, background
 pause/resume, reduced-motion handling, and timer cleanup. Dashboard checks passed
 for navigation, default and expanded counts, combined filters, retained state,
-choosing accounts again, and empty results. These checks use mocked native
-primitives and do not replace a device test.
+choosing accounts again, and empty results. Goal-selection checks passed for
+multi-select/deselect, empty-selection validation, preview feedback, ordered
+callback IDs, retained draft choices, Skip, and both back actions. These checks
+use mocked native primitives and do not replace a device test.
 
 A device/simulator visual and keyboard check is still required;
 the implementation environment could not connect to the simulator or browser.
@@ -258,8 +284,8 @@ The separate 2–3 slide presentation should cover the title, mobile platform an
 technologies, current status and development timeline, hardcoded data, the three
 tasks, and the GitHub repository.
 
-Final UI milestone: the goal-selection page, followed by a manual commit. The
-teammate separately connects the working post-check task. Rehearse the live demo
-after both contributions are integrated.
+UI development stops after the goal-selection page's manual commit. The teammate
+separately connects the working post-check task. Rehearse the live demo after
+both contributions are integrated.
 
 Repository: https://github.com/AllenZheng-05/FutureLens
