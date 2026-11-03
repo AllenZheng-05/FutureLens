@@ -21,10 +21,11 @@ type Props = {
   active: boolean;
   accountCount: number;
   onCancel: () => void;
+  onViewResults: () => void;
 };
 
 // Figma: Footprint - 4 (76:879). Only a local, deterministic demo animation.
-export function ScanProgressScreen({ active, accountCount, onCancel }: Props) {
+export function ScanProgressScreen({ active, accountCount, onCancel, onViewResults }: Props) {
   const insets = useSafeAreaInsets();
   const [phase, setPhase] = useState(0);
   const [foreground, setForeground] = useState(
@@ -95,12 +96,17 @@ export function ScanProgressScreen({ active, accountCount, onCancel }: Props) {
           {complete ? 'Demo scan complete' : `Scanning ${demoScan.postCount.toLocaleString('en-US')} posts...`}
         </Text>
         <Text accessibilityLiveRegion="polite" style={styles.detail}>
-          {complete ? 'Results preview is not available yet.' : demoScan.phases[phase]}
+          {complete ? 'Your sample findings are ready to view.' : demoScan.phases[phase]}
         </Text>
       </ScrollView>
 
       <View style={[styles.actions, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        {complete && <PrimaryButton label="Replay demo" onPress={() => setPhase(0)} />}
+        {complete && <PrimaryButton label="View demo results" onPress={onViewResults} />}
+        {complete && (
+          <Pressable accessibilityRole="button" accessibilityLabel="Replay demo scan" onPress={() => setPhase(0)} style={styles.back}>
+            <Text style={styles.backLabel}>Replay demo</Text>
+          </Pressable>
+        )}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={complete ? 'Back to accounts' : 'Cancel demo scan'}

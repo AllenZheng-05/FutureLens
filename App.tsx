@@ -7,9 +7,11 @@ import { ScanConfirmationSheet } from './src/components/ScanConfirmationSheet';
 import { AccountSelectionScreen } from './src/screens/AccountSelectionScreen';
 import { CheckPostScreen } from './src/screens/CheckPostScreen';
 import { FootprintScreen } from './src/screens/FootprintScreen';
+import { FootprintResultsScreen } from './src/screens/FootprintResultsScreen';
 import { MyLensScreen } from './src/screens/MyLensScreen';
 import { ScanProgressScreen } from './src/screens/ScanProgressScreen';
 import { theme } from './src/theme';
+import { demoFootprintFindings } from './src/data/demoFootprintFindings';
 import type { CheckPostRequest } from './src/types/checkPost';
 import type { DemoAccountId, DemoScanRequest } from './src/types/footprint';
 
@@ -34,18 +36,19 @@ function previewLensSetup() {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('Check');
-  const [footprintPage, setFootprintPage] = useState<'intro' | 'accounts' | 'scan'>('intro');
+  const [footprintPage, setFootprintPage] = useState<'intro' | 'accounts' | 'scan' | 'results'>('intro');
   const [scanAccountIds, setScanAccountIds] = useState<readonly DemoAccountId[]>([]);
   const [showScanConfirmation, setShowScanConfirmation] = useState(false);
   const showingFootprint = activeTab === 'Footprint' && footprintPage === 'intro';
   const showingAccounts = activeTab === 'Footprint' && footprintPage === 'accounts';
   const showingScan = activeTab === 'Footprint' && footprintPage === 'scan';
+  const showingResults = activeTab === 'Footprint' && footprintPage === 'results';
 
   function changeTab(tab: Tab) {
     if (!availableTabs.includes(tab)) return;
     Keyboard.dismiss();
     setShowScanConfirmation(false);
-    if (tab === 'Footprint') setFootprintPage('intro');
+    if (tab === 'Footprint' && footprintPage !== 'results') setFootprintPage('intro');
     setActiveTab(tab);
   }
 
@@ -67,7 +70,7 @@ export default function App() {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       if (showScanConfirmation) {
         setShowScanConfirmation(false);
-      } else if (activeTab === 'Footprint' && footprintPage === 'scan') {
+      } else if (activeTab === 'Footprint' && (footprintPage === 'scan' || footprintPage === 'results')) {
         setFootprintPage('accounts');
       } else if (activeTab === 'Footprint' && footprintPage === 'accounts') {
         setFootprintPage('intro');
@@ -103,6 +106,19 @@ export default function App() {
             active={showingScan}
             accountCount={scanAccountIds.length}
             onCancel={() => setFootprintPage('accounts')}
+            onViewResults={() => setFootprintPage('results')}
+          />
+        </View>
+        <View
+          style={[styles.page, !showingResults && styles.hidden]}
+          accessibilityElementsHidden={!showingResults}
+          importantForAccessibility={showingResults ? 'auto' : 'no-hide-descendants'}
+        >
+          <FootprintResultsScreen
+            findings={demoFootprintFindings}
+            availableTabs={availableTabs}
+            onTabPress={changeTab}
+            onChooseAccounts={() => setFootprintPage('accounts')}
           />
         </View>
         <View

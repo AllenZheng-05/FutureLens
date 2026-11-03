@@ -87,8 +87,8 @@ selected tab state. The selected Footprint icon is an original Figma export,
 bundled locally at 3× resolution and displayed at 24×24.
 
 Connect Accounts opens the account-selection screen, followed by a confirmation
-sheet and simulated scan progress. History results and review actions remain
-future UI checkpoints. No social accounts are connected and no real scan runs.
+sheet, simulated scan progress, and a mock results dashboard. No social
+accounts are connected and no real scan runs.
 The page accepts `onConnectAccounts` as the navigation callback.
 
 The explanation scrolls on smaller screens while the primary action remains
@@ -150,8 +150,8 @@ bundled locally. The initial scan label and status match the design.
   Demo scan complete. The 2,140-post count is fictional and is not calculated
   from the selected accounts or any actual account history.
 - Cancel and Android back return to account selection and retain its choices.
-- Completion offers Replay demo and Back to accounts. Results are a future UI
-  checkpoint, so this version does not show generated findings.
+- Completion offers View demo results, Replay demo, and Back to accounts.
+  Results are static fictional fixtures, not generated findings.
 - Hidden pages run no scan timer. Completion and cancellation clean up timers;
   replay or re-entry starts at the first phase. Backgrounding the app pauses
   progression, which resumes when the app becomes active again.
@@ -159,8 +159,30 @@ bundled locally. The initial scan label and status match the design.
   stops when the app is backgrounded, the scan finishes, or the page is left.
 
 Timing and status text live in `src/data/demoScan.ts`. `ScanProgressScreen`
-accepts `active`, `accountCount`, and `onCancel`; it performs no network requests,
-account operations, or content analysis.
+accepts `active`, `accountCount`, `onCancel`, and `onViewResults`; it performs no
+network requests, account operations, or content analysis.
+
+### Mock Footprint results: UI checkpoint
+
+Completed demo scan → View demo results opens **Footprint - 5** (`76:886`),
+implemented from the supplied screenshot and previously retrieved Figma layout
+metadata. It shows the summary, colored risk badges, category chips, preset
+goal-match toggle, sample finding cards, and Footprint tab state.
+
+- The default view shows nine findings: 3 High, 4 Medium, and 2 Low, matching the
+  supplied screenshot. Turning off Matches my goals exposes three extra samples.
+- Category and goal-match filters combine, and the summary/counts reflect the
+  visible sample rows. An empty state is available when no fixtures match.
+- Goal matches and risk levels are fixed fixture labels. No model, post checker,
+  or personalization algorithm runs.
+- Results and filter selections survive changing tabs. Choose demo accounts
+  again and Android back both return to account selection.
+- Finding cards are read-only. Finding-detail screens, edit/delete actions,
+  social integrations, and real scanning are outside this baseplate checkpoint.
+
+`FootprintResultsScreen` takes a `findings` array plus navigation callbacks. Its
+12 fictional items live in `src/data/demoFootprintFindings.ts`. The 2,140-post and
+3-site metadata are fixed demo values and do not describe real account access.
 
 ## Tasks and implementation status
 
@@ -168,14 +190,16 @@ account operations, or content analysis.
 | --- | --- | --- |
 | Check a post | Draft input, sharing choices, sample drafts | Input UI complete; analysis/results pending |
 | Personalize checks | My Lens introduction and setup entry | Introduction UI complete; settings wizard pending |
-| Review digital footprint | Introduction, account selection, confirmation, demo progress | Simulated progress UI complete; results pending |
+| Review digital footprint | Introduction, account selection, confirmation, demo progress/results | Mock results dashboard UI complete |
 
 Hardcoded content: `src/data/sampleDrafts.ts` contains two fictional draft
 examples, `src/data/demoAccounts.ts` contains five fictional account rows, and
 `src/data/demoScan.ts` supplies the fictional post count and timed UI phases.
+`src/data/demoFootprintFindings.ts` contains 12 fictional findings, preset goal
+matches, risk labels, filter names, and the demo site count.
 Platform and audience options are defined in `src/types/checkPost.ts`. The first
-draft sample uses the student-meeting example shown in Figma. There are no
-analysis results, account sessions, or account connections. The app does not yet
+draft sample uses the student-meeting example shown in Figma. There is no
+generated analysis, account session, or real account connection. The app does not yet
 satisfy the fully functional task requirement for the November 3 demo.
 
 ## Team workflow
@@ -189,7 +213,18 @@ satisfy the fully functional task requirement for the November 3 demo.
 - The coding agent must not stage, commit, push, change author settings, rewrite
   history, or add AI coauthor trailers to commits.
 
-Suggested page commit: `Add simulated Footprint scan progress screen`.
+Suggested page commit: `Add mock Footprint results dashboard`.
+
+### Remaining UI scope and stopping point
+
+After the results dashboard is manually committed, the only remaining UI
+checkpoint is a basic My Lens goal-selection page (**Lens - 2**). Stop after
+that page; further wizards and finding-detail flows are outside the agreed scope.
+
+Task 1's analysis, interpretation/results generation, and feature integration
+belong to the teammate. `previewCheck` remains a placeholder wired through
+`CheckPostScreen.onCheck`. Do not implement that functionality during these UI
+checkpoints.
 
 ### Verification
 
@@ -205,8 +240,10 @@ selections, empty-selection validation, the disabled Career option, confirmation
 dismissal paths, copied read-only callback data, preview callbacks, back
 navigation, inactive-page accessibility, and image dimensions. Controlled-timer
 checks also passed for demo phases, completion, replay, cancellation, background
-pause/resume, reduced-motion handling, and timer cleanup. These checks use mocked
-native primitives and do not replace a device test.
+pause/resume, reduced-motion handling, and timer cleanup. Dashboard checks passed
+for navigation, default and expanded counts, combined filters, retained state,
+choosing accounts again, and empty results. These checks use mocked native
+primitives and do not replace a device test.
 
 A device/simulator visual and keyboard check is still required;
 the implementation environment could not connect to the simulator or browser.
@@ -221,7 +258,8 @@ The separate 2–3 slide presentation should cover the title, mobile platform an
 technologies, current status and development timeline, hardcoded data, the three
 tasks, and the GitHub repository.
 
-Next milestones: implement one Figma page per review/commit checkpoint, connect
-the teammate's working task, and rehearse the complete live demo.
+Final UI milestone: the goal-selection page, followed by a manual commit. The
+teammate separately connects the working post-check task. Rehearse the live demo
+after both contributions are integrated.
 
 Repository: https://github.com/AllenZheng-05/FutureLens
