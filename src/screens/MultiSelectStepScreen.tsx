@@ -15,6 +15,7 @@ type Props<T extends string> = {
   totalSteps: number;
   title: string;
   options: readonly LensOption<T>[];
+  initialIds?: readonly T[];
   backLabel: string;
   skipLabel: string;
   onBack: () => void;
@@ -24,11 +25,12 @@ type Props<T extends string> = {
 
 // Shared layout for the multi-select Lens setup steps (goals, perspectives, topics).
 // Selections live in component state; the page stays mounted, so they survive navigation.
+// initialIds seeds that state, e.g. when App remounts the step to edit saved choices.
 export function MultiSelectStepScreen<T extends string>({
-  step, totalSteps, title, options, backLabel, skipLabel, onBack, onSkip, onContinue,
+  step, totalSteps, title, options, initialIds = [], backLabel, skipLabel, onBack, onSkip, onContinue,
 }: Props<T>) {
   const insets = useSafeAreaInsets();
-  const [selectedIds, setSelectedIds] = useState<readonly T[]>([]);
+  const [selectedIds, setSelectedIds] = useState<readonly T[]>(initialIds);
   const orderedIds = options.filter(option => selectedIds.includes(option.id)).map(option => option.id);
 
   function toggle(id: T) {

@@ -13,6 +13,8 @@ import type { LensAccount, SharingAudience, SharingRules, TopicId } from '../typ
 
 type Props = {
   topicIds: readonly TopicId[];
+  initialRules?: SharingRules;
+  backLabel?: string;
   onBack: () => void;
   onReview: (rules: SharingRules) => void;
 };
@@ -22,10 +24,12 @@ const audienceSegments = sharingAudienceOptions.map(option => ({ value: option.i
 
 // Lens setup Step 4: one Public/Friends/Private rule per watched topic, per account.
 // Rules are kept for every topic, so going back and changing Step 3 does not lose them.
-export function SharingRulesScreen({ topicIds, onBack, onReview }: Props) {
+export function SharingRulesScreen({
+  topicIds, initialRules = defaultSharingRules, backLabel = 'Back to topics', onBack, onReview,
+}: Props) {
   const insets = useSafeAreaInsets();
   const [account, setAccount] = useState<LensAccount>('public');
-  const [rules, setRules] = useState<SharingRules>(defaultSharingRules);
+  const [rules, setRules] = useState<SharingRules>(initialRules);
   const topics = topicOptions.filter(topic => topicIds.includes(topic.id));
 
   function setRule(topic: TopicId, audience: SharingAudience) {
@@ -37,7 +41,7 @@ export function SharingRulesScreen({ topicIds, onBack, onReview }: Props) {
       <StatusBar barStyle="dark-content" />
       <BackHeader
         title="Lens setup"
-        backLabel="Back to topics"
+        backLabel={backLabel}
         onBack={onBack}
         centerContent={<StepProgress current={4} total={4} label="Lens setup progress" />}
       />
