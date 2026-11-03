@@ -8,6 +8,7 @@ import { AccountSelectionScreen } from './src/screens/AccountSelectionScreen';
 import { CheckPostScreen } from './src/screens/CheckPostScreen';
 import { FootprintScreen } from './src/screens/FootprintScreen';
 import { MyLensScreen } from './src/screens/MyLensScreen';
+import { ScanProgressScreen } from './src/screens/ScanProgressScreen';
 import { theme } from './src/theme';
 import type { CheckPostRequest } from './src/types/checkPost';
 import type { DemoAccountId, DemoScanRequest } from './src/types/footprint';
@@ -33,11 +34,12 @@ function previewLensSetup() {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('Check');
-  const [footprintPage, setFootprintPage] = useState<'intro' | 'accounts'>('intro');
+  const [footprintPage, setFootprintPage] = useState<'intro' | 'accounts' | 'scan'>('intro');
   const [scanAccountIds, setScanAccountIds] = useState<readonly DemoAccountId[]>([]);
   const [showScanConfirmation, setShowScanConfirmation] = useState(false);
   const showingFootprint = activeTab === 'Footprint' && footprintPage === 'intro';
   const showingAccounts = activeTab === 'Footprint' && footprintPage === 'accounts';
+  const showingScan = activeTab === 'Footprint' && footprintPage === 'scan';
 
   function changeTab(tab: Tab) {
     if (!availableTabs.includes(tab)) return;
@@ -53,13 +55,11 @@ export default function App() {
     setShowScanConfirmation(true);
   }
 
-  function previewScan(request: DemoScanRequest) {
+  function startDemoScan(request: DemoScanRequest) {
+    if (request.accountIds.length === 0) return;
     setShowScanConfirmation(false);
-    Alert.alert(
-      'Read-only scan preview',
-      `${request.accountIds.length} demo account${request.accountIds.length === 1 ? '' : 's'} selected. Scanning is not available in this preview yet.`,
-      [{ text: 'Keep choosing' }],
-    );
+    setScanAccountIds([...request.accountIds]);
+    setFootprintPage('scan');
   }
 
   useEffect(() => {
@@ -67,6 +67,8 @@ export default function App() {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       if (showScanConfirmation) {
         setShowScanConfirmation(false);
+      } else if (activeTab === 'Footprint' && footprintPage === 'scan') {
+        setFootprintPage('accounts');
       } else if (activeTab === 'Footprint' && footprintPage === 'accounts') {
         setFootprintPage('intro');
       } else {
@@ -90,6 +92,17 @@ export default function App() {
             onCheck={previewCheck}
             onTabPress={changeTab}
             availableTabs={availableTabs}
+          />
+        </View>
+        <View
+          style={[styles.page, !showingScan && styles.hidden]}
+          accessibilityElementsHidden={!showingScan}
+          importantForAccessibility={showingScan ? 'auto' : 'no-hide-descendants'}
+        >
+          <ScanProgressScreen
+            active={showingScan}
+            accountCount={scanAccountIds.length}
+            onCancel={() => setFootprintPage('accounts')}
           />
         </View>
         <View
@@ -129,7 +142,7 @@ export default function App() {
         visible={showScanConfirmation}
         accountIds={scanAccountIds}
         onCancel={() => setShowScanConfirmation(false)}
-        onAllow={previewScan}
+        onAllow={startDemoScan}
       />
     </SafeAreaProvider>
   );

@@ -10,6 +10,7 @@ export const theme = {
     accountInk: '#1B1B3A',
     accountMuted: '#6B6D85',
     accountBorder: '#B8BAD0',
+    ink600: '#4A5070',
     muted: '#616883',
     inactive: '#9CA1BD',
     primary: '#4B4FD9',

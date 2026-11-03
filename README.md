@@ -86,10 +86,10 @@ accent-colored subtitle, centered explanation, Connect Accounts action, and
 selected tab state. The selected Footprint icon is an original Figma export,
 bundled locally at 3× resolution and displayed at 24×24.
 
-Connect Accounts opens the account-selection screen. Demo connections, scanning,
-history results, and review actions remain future UI checkpoints. No social
-accounts are connected and no scan runs. The page accepts `onConnectAccounts` as
-the navigation callback.
+Connect Accounts opens the account-selection screen, followed by a confirmation
+sheet and simulated scan progress. History results and review actions remain
+future UI checkpoints. No social accounts are connected and no real scan runs.
+The page accepts `onConnectAccounts` as the navigation callback.
 
 The explanation scrolls on smaller screens while the primary action remains
 above the bottom tabs. The button follows Figma's 287-point maximum width and
@@ -130,14 +130,37 @@ rows, Allow and Cancel actions, the sheet handle, and a dimmed backdrop.
   real access is granted.
 - Cancel, tapping the backdrop, the accessibility escape action, and Android's
   back action dismiss the sheet without changing account choices.
-- Allow closes the sheet and shows a scan preview notice. It does not grant real
-  permissions, connect an account, or run a scan.
+- Allow closes the sheet and opens simulated scan progress. It does not grant
+  real permissions, connect an account, or run a real scan.
 - Empty account requests cannot proceed. The sheet content scrolls when needed
   and includes safe-area bottom padding.
 
 `ScanConfirmationSheet.onAllow` receives a `DemoScanRequest` containing a copy of
-the selected IDs and `access: 'read-only'`. `previewScan` in `App.tsx` is the
-integration point for the next UI step. No permission approval is persisted.
+the selected IDs and `access: 'read-only'`. `startDemoScan` in `App.tsx` opens the
+progress screen. No permission approval is persisted.
+
+### Simulated scan progress: UI checkpoint
+
+Confirmation → Allow opens Figma's **Footprint - 4** (`76:879`). The original
+96-point and 56-point ring assets are exported from Figma at 3× resolution and
+bundled locally. The initial scan label and status match the design.
+
+- The page is visibly labeled Demo scan and includes the selected account count.
+- Three deterministic UI phases run for approximately one second each, then show
+  Demo scan complete. The 2,140-post count is fictional and is not calculated
+  from the selected accounts or any actual account history.
+- Cancel and Android back return to account selection and retain its choices.
+- Completion offers Replay demo and Back to accounts. Results are a future UI
+  checkpoint, so this version does not show generated findings.
+- Hidden pages run no scan timer. Completion and cancellation clean up timers;
+  replay or re-entry starts at the first phase. Backgrounding the app pauses
+  progression, which resumes when the app becomes active again.
+- Ring opacity pulses while running unless reduced motion is enabled. The pulse
+  stops when the app is backgrounded, the scan finishes, or the page is left.
+
+Timing and status text live in `src/data/demoScan.ts`. `ScanProgressScreen`
+accepts `active`, `accountCount`, and `onCancel`; it performs no network requests,
+account operations, or content analysis.
 
 ## Tasks and implementation status
 
@@ -145,10 +168,11 @@ integration point for the next UI step. No permission approval is persisted.
 | --- | --- | --- |
 | Check a post | Draft input, sharing choices, sample drafts | Input UI complete; analysis/results pending |
 | Personalize checks | My Lens introduction and setup entry | Introduction UI complete; settings wizard pending |
-| Review digital footprint | Introduction, account selection, read-only confirmation | Confirmation UI complete; scan/results pending |
+| Review digital footprint | Introduction, account selection, confirmation, demo progress | Simulated progress UI complete; results pending |
 
 Hardcoded content: `src/data/sampleDrafts.ts` contains two fictional draft
-examples, and `src/data/demoAccounts.ts` contains five fictional account rows.
+examples, `src/data/demoAccounts.ts` contains five fictional account rows, and
+`src/data/demoScan.ts` supplies the fictional post count and timed UI phases.
 Platform and audience options are defined in `src/types/checkPost.ts`. The first
 draft sample uses the student-meeting example shown in Figma. There are no
 analysis results, account sessions, or account connections. The app does not yet
@@ -165,7 +189,7 @@ satisfy the fully functional task requirement for the November 3 demo.
 - The coding agent must not stage, commit, push, change author settings, rewrite
   history, or add AI coauthor trailers to commits.
 
-Suggested page commit: `Add read-only scan confirmation sheet`.
+Suggested page commit: `Add simulated Footprint scan progress screen`.
 
 ### Verification
 
@@ -174,13 +198,15 @@ npm run typecheck
 npx expo export --platform ios --output-dir .expo/verification-ios
 ```
 
-Both checks passed for this page checkpoint, including bundling all fourteen local
+Both checks passed for this page checkpoint, including bundling all sixteen local
 image assets. Temporary component smoke checks passed for draft input behavior,
 all three tab destinations, retained draft and account choices, default account
 selections, empty-selection validation, the disabled Career option, confirmation
 dismissal paths, copied read-only callback data, preview callbacks, back
-navigation, inactive-page accessibility, and image dimensions.
-These checks use mocked native primitives and do not replace a device test.
+navigation, inactive-page accessibility, and image dimensions. Controlled-timer
+checks also passed for demo phases, completion, replay, cancellation, background
+pause/resume, reduced-motion handling, and timer cleanup. These checks use mocked
+native primitives and do not replace a device test.
 
 A device/simulator visual and keyboard check is still required;
 the implementation environment could not connect to the simulator or browser.
