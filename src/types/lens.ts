@@ -17,3 +17,11 @@ export type LensOption<T extends string> = {
 };
 
 export type GoalOption = LensOption<GoalId>;
+
+// A Lens the user has saved from the summary.
+export type SavedLens = {
+  goalIds: readonly GoalId[];
+  perspectiveIds: readonly PerspectiveId[];
+  topicIds: readonly TopicId[];
+  rules: SharingRules;
+};

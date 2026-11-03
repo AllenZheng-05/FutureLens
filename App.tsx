@@ -9,7 +9,9 @@ import { CheckPostScreen } from './src/screens/CheckPostScreen';
 import { FootprintScreen } from './src/screens/FootprintScreen';
 import { FootprintResultsScreen } from './src/screens/FootprintResultsScreen';
 import { MyLensScreen } from './src/screens/MyLensScreen';
+import type { SavedLensSummary } from './src/screens/MyLensScreen';
 import { GoalSelectionScreen } from './src/screens/GoalSelectionScreen';
+import { LensSetScreen } from './src/screens/LensSetScreen';
 import { LensSummaryScreen } from './src/screens/LensSummaryScreen';
 import type { LensSection } from './src/screens/LensSummaryScreen';
 import { MultiSelectStepScreen } from './src/screens/MultiSelectStepScreen';
@@ -17,12 +19,13 @@ import { ScanProgressScreen } from './src/screens/ScanProgressScreen';
 import { SharingRulesScreen } from './src/screens/SharingRulesScreen';
 import { theme } from './src/theme';
 import { demoFootprintFindings } from './src/data/demoFootprintFindings';
+import { describeLensFocus, goalOptions } from './src/data/goalOptions';
 import { defaultSharingRules, perspectiveOptions, topicOptions } from './src/data/lensOptions';
 import type { CheckPostRequest } from './src/types/checkPost';
 import type { DemoAccountId, DemoScanRequest } from './src/types/footprint';
-import type { GoalId, PerspectiveId, SharingRules, TopicId } from './src/types/lens';
+import type { GoalId, LensOption, PerspectiveId, SavedLens, SharingRules, TopicId } from './src/types/lens';
 
-type LensPage = 'intro' | 'goals' | 'perspectives' | 'topics' | 'sharing' | 'summary';
+type LensPage = 'intro' | 'goals' | 'perspectives' | 'topics' | 'sharing' | 'summary' | 'set';
 
 const previousLensPage: Record<Exclude<LensPage, 'intro'>, LensPage> = {
   goals: 'intro',
@@ -30,7 +33,21 @@ const previousLensPage: Record<Exclude<LensPage, 'intro'>, LensPage> = {
   topics: 'perspectives',
   sharing: 'topics',
   summary: 'sharing',
+  set: 'intro',
 };
+
+function labelsOf<T extends string>(options: readonly LensOption<T>[], ids: readonly T[]) {
+  return options.filter(option => ids.includes(option.id)).map(option => option.label);
+}
+
+function summarizeLens(lens: SavedLens): SavedLensSummary {
+  return {
+    focus: describeLensFocus(lens.goalIds),
+    goals: labelsOf(goalOptions, lens.goalIds),
+    perspectives: labelsOf(perspectiveOptions, lens.perspectiveIds),
+    topics: labelsOf(topicOptions, lens.topicIds),
+  };
+}
 
 const availableTabs: readonly Tab[] = ['Check', 'My Lens', 'Footprint'];
 
@@ -54,6 +71,8 @@ export default function App() {
   const [editingLens, setEditingLens] = useState(false);
   // Bumped on Edit so the step pages remount from the saved choices, dropping unsaved changes.
   const [lensEditCount, setLensEditCount] = useState(0);
+  // The last Lens saved from the summary; drafts above can differ until saved again.
+  const [savedLens, setSavedLens] = useState<SavedLens | null>(null);
   const [footprintPage, setFootprintPage] = useState<'intro' | 'accounts' | 'scan' | 'results'>('intro');
   const [scanAccountIds, setScanAccountIds] = useState<readonly DemoAccountId[]>([]);
   const [showScanConfirmation, setShowScanConfirmation] = useState(false);
@@ -67,6 +86,7 @@ export default function App() {
   const showingTopics = activeTab === 'My Lens' && lensPage === 'topics';
   const showingSharing = activeTab === 'My Lens' && lensPage === 'sharing';
   const showingSummary = activeTab === 'My Lens' && lensPage === 'summary';
+  const showingLensSet = activeTab === 'My Lens' && lensPage === 'set';
 
   function changeTab(tab: Tab) {
     if (!availableTabs.includes(tab)) return;
@@ -104,6 +124,9 @@ export default function App() {
     if (editingLens && lensPage !== 'summary') {
       setEditingLens(false);
       setLensPage('summary');
+    } else if (lensPage === 'summary' && savedLens) {
+      // Once saved, the summary is opened from the My Lens tab, so back returns there.
+      setLensPage('intro');
     } else {
       setLensPage(previousLensPage[lensPage]);
     }
@@ -144,16 +167,25 @@ export default function App() {
     setLensPage(section);
   }
 
-  // Placeholder until the "Your Lens is set" confirmation is built.
   function saveLens() {
-    Alert.alert(
-      'Save preview',
-      'Your Lens choices are ready. The "Your Lens is set" confirmation is not available in this preview yet.',
-      [
-        { text: 'Keep reviewing', style: 'cancel' },
-        { text: 'Back to My Lens', onPress: () => setLensPage('intro') },
-      ],
-    );
+    setSavedLens({
+      goalIds: [...lensGoalIds],
+      perspectiveIds: [...lensPerspectiveIds],
+      topicIds: [...lensTopicIds],
+      rules: lensRules,
+    });
+    setEditingLens(false);
+    setLensPage('set');
+  }
+
+  function openSavedLens() {
+    setEditingLens(false);
+    setLensPage('summary');
+  }
+
+  function tryLensOnDraft() {
+    setLensPage('intro');
+    changeTab('Check');
   }
 
   useEffect(() => {
@@ -173,7 +205,7 @@ export default function App() {
       return true;
     });
     return () => subscription.remove();
-  }, [activeTab, lensPage, editingLens, footprintPage, showScanConfirmation]);
+  }, [activeTab, lensPage, editingLens, savedLens, footprintPage, showScanConfirmation]);
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
@@ -220,7 +252,9 @@ export default function App() {
           importantForAccessibility={showingMyLens ? 'auto' : 'no-hide-descendants'}
         >
           <MyLensScreen
+            savedLens={savedLens ? summarizeLens(savedLens) : undefined}
             onStartSetup={() => setLensPage('goals')}
+            onEditLens={openSavedLens}
             onTabPress={changeTab}
             availableTabs={availableTabs}
           />
@@ -304,6 +338,17 @@ export default function App() {
             onBack={lensBack}
             onEdit={editLensSection}
             onSave={saveLens}
+          />
+        </View>
+        <View
+          style={[styles.page, !showingLensSet && styles.hidden]}
+          accessibilityElementsHidden={!showingLensSet}
+          importantForAccessibility={showingLensSet ? 'auto' : 'no-hide-descendants'}
+        >
+          <LensSetScreen
+            focus={describeLensFocus(savedLens?.goalIds ?? [])}
+            onDone={() => setLensPage('intro')}
+            onTryDraft={tryLensOnDraft}
           />
         </View>
         <View
