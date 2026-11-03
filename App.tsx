@@ -10,13 +10,22 @@ import { FootprintScreen } from './src/screens/FootprintScreen';
 import { FootprintResultsScreen } from './src/screens/FootprintResultsScreen';
 import { MyLensScreen } from './src/screens/MyLensScreen';
 import { GoalSelectionScreen } from './src/screens/GoalSelectionScreen';
+import { MultiSelectStepScreen } from './src/screens/MultiSelectStepScreen';
 import { ScanProgressScreen } from './src/screens/ScanProgressScreen';
 import { theme } from './src/theme';
 import { demoFootprintFindings } from './src/data/demoFootprintFindings';
 import { goalOptions } from './src/data/goalOptions';
+import { perspectiveOptions, topicOptions } from './src/data/lensOptions';
 import type { CheckPostRequest } from './src/types/checkPost';
 import type { DemoAccountId, DemoScanRequest } from './src/types/footprint';
-import type { GoalId } from './src/types/lens';
+import type { GoalId, LensOption, PerspectiveId, TopicId } from './src/types/lens';
+
+type LensPage = 'intro' | 'goals' | 'perspectives' | 'topics';
+
+function labelsFor<T extends string>(options: readonly LensOption<T>[], ids: readonly T[]) {
+  const labels = options.filter(option => ids.includes(option.id)).map(option => option.label);
+  return labels.length > 0 ? labels.join(', ') : 'Skipped';
+}
 
 const availableTabs: readonly Tab[] = ['Check', 'My Lens', 'Footprint'];
 
@@ -31,7 +40,9 @@ function previewCheck(_request: CheckPostRequest) {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('Check');
-  const [lensPage, setLensPage] = useState<'intro' | 'goals'>('intro');
+  const [lensPage, setLensPage] = useState<LensPage>('intro');
+  const [lensGoalIds, setLensGoalIds] = useState<readonly GoalId[]>([]);
+  const [lensPerspectiveIds, setLensPerspectiveIds] = useState<readonly PerspectiveId[]>([]);
   const [footprintPage, setFootprintPage] = useState<'intro' | 'accounts' | 'scan' | 'results'>('intro');
   const [scanAccountIds, setScanAccountIds] = useState<readonly DemoAccountId[]>([]);
   const [showScanConfirmation, setShowScanConfirmation] = useState(false);
@@ -41,6 +52,8 @@ export default function App() {
   const showingResults = activeTab === 'Footprint' && footprintPage === 'results';
   const showingMyLens = activeTab === 'My Lens' && lensPage === 'intro';
   const showingGoals = activeTab === 'My Lens' && lensPage === 'goals';
+  const showingPerspectives = activeTab === 'My Lens' && lensPage === 'perspectives';
+  const showingTopics = activeTab === 'My Lens' && lensPage === 'topics';
 
   function changeTab(tab: Tab) {
     if (!availableTabs.includes(tab)) return;
@@ -63,11 +76,24 @@ export default function App() {
     setFootprintPage('scan');
   }
 
-  function previewGoalSelection(goalIds: readonly GoalId[]) {
-    const labels = goalOptions.filter(goal => goalIds.includes(goal.id)).map(goal => goal.label);
+  function continueFromGoals(goalIds: readonly GoalId[]) {
+    setLensGoalIds([...goalIds]);
+    setLensPage('perspectives');
+  }
+
+  function continueFromPerspectives(perspectiveIds: readonly PerspectiveId[]) {
+    setLensPerspectiveIds([...perspectiveIds]);
+    setLensPage('topics');
+  }
+
+  // Placeholder until Step 4 ("Who should see what?") is built.
+  function previewLensSetup(topicIds: readonly TopicId[]) {
     Alert.alert(
-      'Goal selection preview',
-      `${labels.join('\n')}\n\nFurther setup and personalized checks are outside this demo.`,
+      'Lens setup preview',
+      `Goals: ${labelsFor(goalOptions, lensGoalIds)}\n`
+        + `Perspectives: ${labelsFor(perspectiveOptions, lensPerspectiveIds)}\n`
+        + `Watching for: ${labelsFor(topicOptions, topicIds)}\n\n`
+        + 'Sharing rules (Step 4) are not available in this preview yet.',
       [
         { text: 'Keep editing', style: 'cancel' },
         { text: 'Back to My Lens', onPress: () => setLensPage('intro') },
@@ -80,6 +106,10 @@ export default function App() {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       if (showScanConfirmation) {
         setShowScanConfirmation(false);
+      } else if (activeTab === 'My Lens' && lensPage === 'topics') {
+        setLensPage('perspectives');
+      } else if (activeTab === 'My Lens' && lensPage === 'perspectives') {
+        setLensPage('goals');
       } else if (activeTab === 'My Lens' && lensPage === 'goals') {
         setLensPage('intro');
       } else if (activeTab === 'Footprint' && (footprintPage === 'scan' || footprintPage === 'results')) {
@@ -152,7 +182,41 @@ export default function App() {
           <GoalSelectionScreen
             onBack={() => setLensPage('intro')}
             onSkip={() => setLensPage('intro')}
-            onContinue={previewGoalSelection}
+            onContinue={continueFromGoals}
+          />
+        </View>
+        <View
+          style={[styles.page, !showingPerspectives && styles.hidden]}
+          accessibilityElementsHidden={!showingPerspectives}
+          importantForAccessibility={showingPerspectives ? 'auto' : 'no-hide-descendants'}
+        >
+          <MultiSelectStepScreen
+            step={2}
+            totalSteps={4}
+            title="Whose eyes worry you most?"
+            options={perspectiveOptions}
+            backLabel="Back to goals"
+            skipLabel="Skip perspective selection for now"
+            onBack={() => setLensPage('goals')}
+            onSkip={() => continueFromPerspectives([])}
+            onContinue={continueFromPerspectives}
+          />
+        </View>
+        <View
+          style={[styles.page, !showingTopics && styles.hidden]}
+          accessibilityElementsHidden={!showingTopics}
+          importantForAccessibility={showingTopics ? 'auto' : 'no-hide-descendants'}
+        >
+          <MultiSelectStepScreen
+            step={3}
+            totalSteps={4}
+            title="What should Lens watch for?"
+            options={topicOptions}
+            backLabel="Back to perspectives"
+            skipLabel="Skip topic selection for now"
+            onBack={() => setLensPage('perspectives')}
+            onSkip={() => previewLensSetup([])}
+            onContinue={previewLensSetup}
           />
         </View>
         <View
