@@ -23,6 +23,8 @@ import type { Audience, CheckPostRequest, Platform as SharingPlatform } from '..
 
 type Props = {
   onCheck: (request: CheckPostRequest) => void;
+  // Seed for a remount, e.g. when a rewrite from the results page replaces the draft.
+  initialRequest?: CheckPostRequest;
   onTabPress?: (tab: Tab) => void;
   availableTabs?: readonly Tab[];
 };
@@ -65,11 +67,11 @@ function ChoiceGroup<T extends string>({
   );
 }
 
-export function CheckPostScreen({ onCheck, onTabPress, availableTabs }: Props) {
+export function CheckPostScreen({ onCheck, initialRequest, onTabPress, availableTabs }: Props) {
   const insets = useSafeAreaInsets();
-  const [draft, setDraft] = useState('');
-  const [platform, setPlatform] = useState<SharingPlatform>('LinkedIn');
-  const [audience, setAudience] = useState<Audience>('Public');
+  const [draft, setDraft] = useState(initialRequest?.draft ?? '');
+  const [platform, setPlatform] = useState<SharingPlatform>(initialRequest?.platform ?? 'LinkedIn');
+  const [audience, setAudience] = useState<Audience>(initialRequest?.audience ?? 'Public');
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const canCheck = draft.trim().length > 0;
 

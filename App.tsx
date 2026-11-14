@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AccessibilityInfo, Alert, BackHandler, Keyboard, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, BackHandler, Keyboard, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 import type { Tab } from './src/components/BottomTabs';
@@ -8,6 +8,9 @@ import { FindingActionSheet } from './src/components/FindingActionSheet';
 import { ScanConfirmationSheet } from './src/components/ScanConfirmationSheet';
 import { AccountSelectionScreen } from './src/screens/AccountSelectionScreen';
 import { CheckPostScreen } from './src/screens/CheckPostScreen';
+import { CheckReadingScreen } from './src/screens/CheckReadingScreen';
+import { ChooseFixScreen } from './src/screens/ChooseFixScreen';
+import { ReadyToShareScreen } from './src/screens/ReadyToShareScreen';
 import { EditCaptionScreen } from './src/screens/EditCaptionScreen';
 import { FindingDetailScreen } from './src/screens/FindingDetailScreen';
 import { FootprintScreen } from './src/screens/FootprintScreen';
@@ -28,7 +31,8 @@ import { demoFootprintFindings } from './src/data/demoFootprintFindings';
 import { immediateResolutions, resolutionLabels } from './src/data/findingActions';
 import { describeLensFocus, goalOptions } from './src/data/goalOptions';
 import { defaultSharingRules, perspectiveOptions, topicOptions } from './src/data/lensOptions';
-import type { CheckPostRequest } from './src/types/checkPost';
+import { findPostCheckResult } from './src/data/postCheckResults';
+import type { CheckPostRequest, FixKind, FixOption } from './src/types/checkPost';
 import type { DemoAccountId, DemoScanRequest, FindingAction, Resolution, ResolutionNotice } from './src/types/footprint';
 import type { GoalId, LensOption, PerspectiveId, SavedLens, SharingRules, TopicId } from './src/types/lens';
 
@@ -63,17 +67,18 @@ type FootprintPage = 'intro' | 'accounts' | 'scan' | 'results' | 'detail' | 'edi
 // Pages reached after a scan. Returning to the Footprint tab keeps the user on these.
 const footprintReviewPages: readonly FootprintPage[] = ['results', 'detail', 'edit', 'removal', 'progress'];
 
-function previewCheck(_request: CheckPostRequest) {
-  // Replace this callback with the teammate-owned check/results flow.
-  Alert.alert(
-    'Post checking preview',
-    'Your draft is ready. Post analysis is not available in this preview yet.',
-    [{ text: 'Keep editing' }],
-  );
-}
+type CheckPage = 'composer' | 'reading' | 'rewrite' | 'context' | 'ready';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('Check');
+  const [checkPage, setCheckPage] = useState<CheckPage>('composer');
+  // The draft that was checked, shown on the reading page with its preset analysis.
+  const [checkRequest, setCheckRequest] = useState<CheckPostRequest | null>(null);
+  // The post the user settled on (maybe rewritten or with context), shown on Ready to share.
+  const [finalPost, setFinalPost] = useState<CheckPostRequest | null>(null);
+  // Seed for a composer remount, e.g. when a rewrite from the results replaces the draft.
+  const [composerSeed, setComposerSeed] = useState<CheckPostRequest | null>(null);
+  const [composerKey, setComposerKey] = useState(0);
   const [lensPage, setLensPage] = useState<LensPage>('intro');
   const [lensGoalIds, setLensGoalIds] = useState<readonly GoalId[]>([]);
   const [lensPerspectiveIds, setLensPerspectiveIds] = useState<readonly PerspectiveId[]>([]);
@@ -111,6 +116,15 @@ export default function App() {
   const showingSharing = activeTab === 'My Lens' && lensPage === 'sharing';
   const showingSummary = activeTab === 'My Lens' && lensPage === 'summary';
   const showingLensSet = activeTab === 'My Lens' && lensPage === 'set';
+  const showingCheckReading = activeTab === 'Check' && checkPage === 'reading';
+  const showingChooseRewrite = activeTab === 'Check' && checkPage === 'rewrite';
+  const showingChooseContext = activeTab === 'Check' && checkPage === 'context';
+  const showingReadyToShare = activeTab === 'Check' && checkPage === 'ready';
+  const showingComposer = activeTab === 'Check' && checkPage === 'composer';
+  const checkResult = checkRequest ? findPostCheckResult(checkRequest.draft) : null;
+  // True when the private-share fix moved the post to a smaller audience.
+  const audienceChanged = finalPost !== null && checkRequest !== null
+    && finalPost.audience !== checkRequest.audience;
 
   function changeTab(tab: Tab) {
     if (!availableTabs.includes(tab)) return;
@@ -120,6 +134,57 @@ export default function App() {
     setShowDeleteConfirm(false);
     if (tab === 'Footprint' && !footprintReviewPages.includes(footprintPage)) setFootprintPage('intro');
     setActiveTab(tab);
+  }
+
+  // Runs the demo check: the reading page shows the preset analysis for this draft.
+  function runCheck(request: CheckPostRequest) {
+    setCheckRequest(request);
+    setFinalPost(null);
+    setCheckPage('reading');
+  }
+
+  function postAnyway() {
+    if (!checkRequest) return;
+    setFinalPost({ ...checkRequest });
+    setCheckPage('ready');
+  }
+
+  // Route the picked fix: rewrite/context go to a chooser, private share applies
+  // the smaller audience right away and goes straight to Ready to share.
+  function chooseCheckFix(kind: FixKind) {
+    if (!checkRequest || !checkResult) return;
+    if (kind === 'rewrite') {
+      setCheckPage('rewrite');
+      return;
+    }
+    if (kind === 'context') {
+      setCheckPage('context');
+      return;
+    }
+    setFinalPost({ ...checkRequest, audience: 'Friends' });
+    setCheckPage('ready');
+  }
+
+  function useFixOption(option: FixOption) {
+    if (!checkRequest) return;
+    setFinalPost({ ...checkRequest, draft: option.text });
+    setCheckPage('ready');
+  }
+
+  // Done: back to the composer seeded with the settled post, ready to re-check.
+  function doneSharing() {
+    if (finalPost) {
+      setComposerSeed(finalPost);
+      setComposerKey(count => count + 1);
+    }
+    setFinalPost(null);
+    setCheckRequest(null);
+    setCheckPage('composer');
+  }
+
+  function backFromReady() {
+    setFinalPost(null);
+    setCheckPage('reading');
   }
 
   function confirmSelectedAccounts(accountIds: readonly DemoAccountId[]) {
@@ -264,11 +329,12 @@ export default function App() {
 
   function tryLensOnDraft() {
     setLensPage('intro');
+    setCheckPage('composer');
     changeTab('Check');
   }
 
   useEffect(() => {
-    if (activeTab === 'Check') return;
+    if (activeTab === 'Check' && checkPage === 'composer') return;
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       if (showScanConfirmation) {
         setShowScanConfirmation(false);
@@ -276,6 +342,12 @@ export default function App() {
         setShowActionSheet(false);
       } else if (showDeleteConfirm) {
         setShowDeleteConfirm(false);
+      } else if (activeTab === 'Check' && checkPage === 'reading') {
+        setCheckPage('composer');
+      } else if (activeTab === 'Check' && (checkPage === 'rewrite' || checkPage === 'context')) {
+        setCheckPage('reading');
+      } else if (activeTab === 'Check' && checkPage === 'ready') {
+        backFromReady();
       } else if (activeTab === 'My Lens' && lensPage !== 'intro') {
         lensBack();
       } else if (activeTab === 'Footprint' && (footprintPage === 'edit' || footprintPage === 'removal')) {
@@ -292,22 +364,81 @@ export default function App() {
       return true;
     });
     return () => subscription.remove();
-  }, [activeTab, lensPage, editingLens, savedLens, footprintPage, showScanConfirmation, showActionSheet, showDeleteConfirm]);
+  }, [activeTab, checkPage, lensPage, editingLens, savedLens, footprintPage, showScanConfirmation, showActionSheet, showDeleteConfirm]);
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <View style={styles.app}>
         {/* Keep pages mounted so switching tabs preserves the draft and choices. */}
         <View
-          style={[styles.page, activeTab !== 'Check' && styles.hidden]}
-          accessibilityElementsHidden={activeTab !== 'Check'}
-          importantForAccessibility={activeTab === 'Check' ? 'auto' : 'no-hide-descendants'}
+          style={[styles.page, (!showingComposer) && styles.hidden]}
+          accessibilityElementsHidden={!showingComposer}
+          importantForAccessibility={showingComposer ? 'auto' : 'no-hide-descendants'}
         >
           <CheckPostScreen
-            onCheck={previewCheck}
+            key={`composer-${composerKey}`}
+            onCheck={runCheck}
+            initialRequest={composerSeed ?? undefined}
             onTabPress={changeTab}
             availableTabs={availableTabs}
           />
+        </View>
+        <View
+          style={[styles.page, !showingCheckReading && styles.hidden]}
+          accessibilityElementsHidden={!showingCheckReading}
+          importantForAccessibility={showingCheckReading ? 'auto' : 'no-hide-descendants'}
+        >
+          {checkRequest && checkResult && (
+            <CheckReadingScreen
+              request={checkRequest}
+              result={checkResult}
+              onBack={() => setCheckPage('composer')}
+              onPostAnyway={postAnyway}
+              onChooseFix={chooseCheckFix}
+            />
+          )}
+        </View>
+        <View
+          style={[styles.page, !showingChooseRewrite && styles.hidden]}
+          accessibilityElementsHidden={!showingChooseRewrite}
+          importantForAccessibility={showingChooseRewrite ? 'auto' : 'no-hide-descendants'}
+        >
+          {checkResult && (
+            <ChooseFixScreen
+              mode="rewrite"
+              options={checkResult.rewrites}
+              onBack={() => setCheckPage('reading')}
+              onUse={useFixOption}
+            />
+          )}
+        </View>
+        <View
+          style={[styles.page, !showingChooseContext && styles.hidden]}
+          accessibilityElementsHidden={!showingChooseContext}
+          importantForAccessibility={showingChooseContext ? 'auto' : 'no-hide-descendants'}
+        >
+          {checkResult && (
+            <ChooseFixScreen
+              mode="context"
+              options={checkResult.contexts}
+              onBack={() => setCheckPage('reading')}
+              onUse={useFixOption}
+            />
+          )}
+        </View>
+        <View
+          style={[styles.page, !showingReadyToShare && styles.hidden]}
+          accessibilityElementsHidden={!showingReadyToShare}
+          importantForAccessibility={showingReadyToShare ? 'auto' : 'no-hide-descendants'}
+        >
+          {finalPost && (
+            <ReadyToShareScreen
+              post={finalPost}
+              audienceChanged={audienceChanged}
+              onBack={backFromReady}
+              onDone={doneSharing}
+            />
+          )}
         </View>
         <View
           style={[styles.page, !showingScan && styles.hidden]}
