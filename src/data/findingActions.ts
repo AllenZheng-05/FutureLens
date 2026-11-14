@@ -1,4 +1,4 @@
-import type { FindingActionOption, FindingCategory } from '../types/footprint';
+import type { FindingAction, FindingActionOption, FindingCategory, Resolution } from '../types/footprint';
 
 const keep: FindingActionOption = { id: 'keep', label: 'Keep it', description: 'Leave it as it is' };
 
@@ -23,6 +23,27 @@ export const findingActions: Record<FindingCategory, readonly FindingActionOptio
     { id: 'ignore', label: 'Ignore', description: 'Leave it for now' },
     { id: 'request-removal', label: 'Request removal', description: 'Ask the site to delete your listing' },
   ],
+};
+
+// Actions that resolve a finding straight from the sheet. Delete asks for confirmation
+// first; Edit caption and Request removal open their own screens.
+export const immediateResolutions: Partial<Record<FindingAction, Resolution>> = {
+  private: 'private',
+  keep: 'kept',
+  ignore: 'ignored',
+  untag: 'untagged',
+  'ask-removal': 'removal-requested',
+};
+
+// Used for the Undo notice and the Resolved list (Figma: Footprint - 9 and 13).
+export const resolutionLabels: Record<Resolution, string> = {
+  deleted: 'Post deleted',
+  private: 'Made private',
+  kept: 'Kept as is',
+  ignored: 'Ignored for now',
+  edited: 'Caption updated',
+  untagged: 'Tag removed',
+  'removal-requested': 'Removal requested',
 };
 
 // Short guidance above the choices: when to pick which (DP3 usability fix).

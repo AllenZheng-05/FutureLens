@@ -52,6 +52,11 @@ export type FindingActionOption = {
   destructive?: boolean;
 };
 
+// What happened to a finding once the user acted on it. Kept in app state only.
+export type Resolution = 'private' | 'deleted' | 'kept' | 'ignored' | 'edited' | 'untagged' | 'removal-requested';
+
+export type ResolutionNotice = { findingId: string; resolution: Resolution };
+
 export type DemoFootprintFinding = {
   id: string;
   title: string;

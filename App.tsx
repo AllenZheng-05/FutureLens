@@ -3,6 +3,7 @@ import { Alert, BackHandler, Keyboard, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 import type { Tab } from './src/components/BottomTabs';
+import { DeleteConfirmDialog } from './src/components/DeleteConfirmDialog';
 import { FindingActionSheet } from './src/components/FindingActionSheet';
 import { ScanConfirmationSheet } from './src/components/ScanConfirmationSheet';
 import { AccountSelectionScreen } from './src/screens/AccountSelectionScreen';
@@ -21,10 +22,11 @@ import { ScanProgressScreen } from './src/screens/ScanProgressScreen';
 import { SharingRulesScreen } from './src/screens/SharingRulesScreen';
 import { theme } from './src/theme';
 import { demoFootprintFindings } from './src/data/demoFootprintFindings';
+import { immediateResolutions } from './src/data/findingActions';
 import { describeLensFocus, goalOptions } from './src/data/goalOptions';
 import { defaultSharingRules, perspectiveOptions, topicOptions } from './src/data/lensOptions';
 import type { CheckPostRequest } from './src/types/checkPost';
-import type { DemoAccountId, DemoScanRequest, FindingAction } from './src/types/footprint';
+import type { DemoAccountId, DemoScanRequest, FindingAction, Resolution, ResolutionNotice } from './src/types/footprint';
 import type { GoalId, LensOption, PerspectiveId, SavedLens, SharingRules, TopicId } from './src/types/lens';
 
 type LensPage = 'intro' | 'goals' | 'perspectives' | 'topics' | 'sharing' | 'summary' | 'set';
@@ -83,6 +85,11 @@ export default function App() {
   const [footprintPage, setFootprintPage] = useState<FootprintPage>('intro');
   const [selectedFindingId, setSelectedFindingId] = useState<string | null>(null);
   const [showActionSheet, setShowActionSheet] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // How each reviewed finding was handled, for this session only. Nothing is posted or deleted.
+  const [resolutions, setResolutions] = useState<Readonly<Record<string, Resolution>>>({});
+  // The latest resolution, shown on the results list with Undo.
+  const [resolutionNotice, setResolutionNotice] = useState<ResolutionNotice | null>(null);
   const [scanAccountIds, setScanAccountIds] = useState<readonly DemoAccountId[]>([]);
   const [showScanConfirmation, setShowScanConfirmation] = useState(false);
   const showingFootprint = activeTab === 'Footprint' && footprintPage === 'intro';
@@ -104,6 +111,7 @@ export default function App() {
     Keyboard.dismiss();
     setShowScanConfirmation(false);
     setShowActionSheet(false);
+    setShowDeleteConfirm(false);
     if (tab === 'Footprint' && !footprintReviewPages.includes(footprintPage)) setFootprintPage('intro');
     setActiveTab(tab);
   }
@@ -123,12 +131,40 @@ export default function App() {
 
   function openFinding(findingId: string) {
     setSelectedFindingId(findingId);
+    setResolutionNotice(null);
     setFootprintPage('detail');
   }
 
-  function chooseFindingAction(_action: FindingAction) {
-    // Each action is applied in the following steps; for now the sheet only closes.
+  // Marks the open finding as handled and returns to the results list with Undo.
+  function resolveSelectedFinding(resolution: Resolution) {
+    if (!selectedFindingId) return;
+    const findingId = selectedFindingId;
+    setResolutions(current => ({ ...current, [findingId]: resolution }));
+    setResolutionNotice({ findingId, resolution });
     setShowActionSheet(false);
+    setShowDeleteConfirm(false);
+    setFootprintPage('results');
+  }
+
+  function undoResolution() {
+    if (!resolutionNotice) return;
+    const { findingId } = resolutionNotice;
+    setResolutions(current => {
+      const { [findingId]: _undone, ...rest } = current;
+      return rest;
+    });
+    setResolutionNotice(null);
+  }
+
+  function chooseFindingAction(action: FindingAction) {
+    setShowActionSheet(false);
+    if (action === 'delete') {
+      setShowDeleteConfirm(true);
+      return;
+    }
+    const resolution = immediateResolutions[action];
+    if (resolution) resolveSelectedFinding(resolution);
+    // Edit caption and Request removal open their own screens in the next steps.
   }
 
   // After a step: go on to the next one, or back to the summary when editing.
@@ -217,6 +253,8 @@ export default function App() {
         setShowScanConfirmation(false);
       } else if (showActionSheet) {
         setShowActionSheet(false);
+      } else if (showDeleteConfirm) {
+        setShowDeleteConfirm(false);
       } else if (activeTab === 'My Lens' && lensPage !== 'intro') {
         lensBack();
       } else if (activeTab === 'Footprint' && footprintPage === 'detail') {
@@ -231,7 +269,7 @@ export default function App() {
       return true;
     });
     return () => subscription.remove();
-  }, [activeTab, lensPage, editingLens, savedLens, footprintPage, showScanConfirmation, showActionSheet]);
+  }, [activeTab, lensPage, editingLens, savedLens, footprintPage, showScanConfirmation, showActionSheet, showDeleteConfirm]);
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
@@ -267,10 +305,13 @@ export default function App() {
         >
           <FootprintResultsScreen
             findings={demoFootprintFindings}
+            resolutions={resolutions}
+            notice={resolutionNotice}
             availableTabs={availableTabs}
             onTabPress={changeTab}
             onChooseAccounts={() => setFootprintPage('accounts')}
             onOpenFinding={openFinding}
+            onUndo={undoResolution}
           />
         </View>
         <View
@@ -282,8 +323,7 @@ export default function App() {
             finding={selectedFinding}
             onBack={() => setFootprintPage('results')}
             onChooseAction={() => setShowActionSheet(true)}
-            // Wired to resolutions in the next step.
-            onKeep={() => {}}
+            onKeep={() => resolveSelectedFinding('kept')}
           />
         </View>
         <View
@@ -424,6 +464,11 @@ export default function App() {
         finding={selectedFinding}
         onSelect={chooseFindingAction}
         onCancel={() => setShowActionSheet(false)}
+      />
+      <DeleteConfirmDialog
+        visible={showDeleteConfirm && showingFindingDetail}
+        onCancel={() => setShowDeleteConfirm(false)}
+        onDelete={() => resolveSelectedFinding('deleted')}
       />
     </SafeAreaProvider>
   );
