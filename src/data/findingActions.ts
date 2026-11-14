@@ -46,6 +46,26 @@ export const resolutionLabels: Record<Resolution, string> = {
   'removal-requested': 'Removal requested',
 };
 
+// Request removal (Figma: Footprint - 12). The first reason and message follow Figma.
+// Choosing a reason fills in its message unless the user has already edited it.
+export const removalReasons: readonly { id: string; label: string; message: string }[] = [
+  {
+    id: 'personal-info',
+    label: 'Remove my personal info',
+    message: 'Hello, I’m requesting removal of my personal information from your listing. Please confirm once it’s deleted. Thank you.',
+  },
+  {
+    id: 'inaccurate',
+    label: 'The information is wrong',
+    message: 'Hello, the information in your listing about me is out of date or wrong. Please remove the listing and confirm once it’s deleted. Thank you.',
+  },
+  {
+    id: 'safety',
+    label: 'Safety concern',
+    message: 'Hello, your listing shows where I live, which is a safety concern for me. Please remove it as soon as possible and confirm once it’s deleted. Thank you.',
+  },
+];
+
 // Short guidance above the choices: when to pick which (DP3 usability fix).
 export const findingActionGuidance: Record<FindingCategory, string> = {
   posts: 'Edit if the point is fine but the wording isn’t. Make private if friends can see it. Delete if it shouldn’t exist.',
