@@ -6,6 +6,7 @@ import type { Tab } from './src/components/BottomTabs';
 import { ScanConfirmationSheet } from './src/components/ScanConfirmationSheet';
 import { AccountSelectionScreen } from './src/screens/AccountSelectionScreen';
 import { CheckPostScreen } from './src/screens/CheckPostScreen';
+import { FindingDetailScreen } from './src/screens/FindingDetailScreen';
 import { FootprintScreen } from './src/screens/FootprintScreen';
 import { FootprintResultsScreen } from './src/screens/FootprintResultsScreen';
 import { MyLensScreen } from './src/screens/MyLensScreen';
@@ -51,6 +52,11 @@ function summarizeLens(lens: SavedLens): SavedLensSummary {
 
 const availableTabs: readonly Tab[] = ['Check', 'My Lens', 'Footprint'];
 
+type FootprintPage = 'intro' | 'accounts' | 'scan' | 'results' | 'detail';
+
+// Pages reached after a scan. Returning to the Footprint tab keeps the user on these.
+const footprintReviewPages: readonly FootprintPage[] = ['results', 'detail'];
+
 function previewCheck(_request: CheckPostRequest) {
   // Replace this callback with the teammate-owned check/results flow.
   Alert.alert(
@@ -73,13 +79,16 @@ export default function App() {
   const [lensEditCount, setLensEditCount] = useState(0);
   // The last Lens saved from the summary; drafts above can differ until saved again.
   const [savedLens, setSavedLens] = useState<SavedLens | null>(null);
-  const [footprintPage, setFootprintPage] = useState<'intro' | 'accounts' | 'scan' | 'results'>('intro');
+  const [footprintPage, setFootprintPage] = useState<FootprintPage>('intro');
+  const [selectedFindingId, setSelectedFindingId] = useState<string | null>(null);
   const [scanAccountIds, setScanAccountIds] = useState<readonly DemoAccountId[]>([]);
   const [showScanConfirmation, setShowScanConfirmation] = useState(false);
   const showingFootprint = activeTab === 'Footprint' && footprintPage === 'intro';
   const showingAccounts = activeTab === 'Footprint' && footprintPage === 'accounts';
   const showingScan = activeTab === 'Footprint' && footprintPage === 'scan';
   const showingResults = activeTab === 'Footprint' && footprintPage === 'results';
+  const showingFindingDetail = activeTab === 'Footprint' && footprintPage === 'detail';
+  const selectedFinding = demoFootprintFindings.find(finding => finding.id === selectedFindingId);
   const showingMyLens = activeTab === 'My Lens' && lensPage === 'intro';
   const showingGoals = activeTab === 'My Lens' && lensPage === 'goals';
   const showingPerspectives = activeTab === 'My Lens' && lensPage === 'perspectives';
@@ -92,7 +101,7 @@ export default function App() {
     if (!availableTabs.includes(tab)) return;
     Keyboard.dismiss();
     setShowScanConfirmation(false);
-    if (tab === 'Footprint' && footprintPage !== 'results') setFootprintPage('intro');
+    if (tab === 'Footprint' && !footprintReviewPages.includes(footprintPage)) setFootprintPage('intro');
     setActiveTab(tab);
   }
 
@@ -107,6 +116,11 @@ export default function App() {
     setShowScanConfirmation(false);
     setScanAccountIds([...request.accountIds]);
     setFootprintPage('scan');
+  }
+
+  function openFinding(findingId: string) {
+    setSelectedFindingId(findingId);
+    setFootprintPage('detail');
   }
 
   // After a step: go on to the next one, or back to the summary when editing.
@@ -195,6 +209,8 @@ export default function App() {
         setShowScanConfirmation(false);
       } else if (activeTab === 'My Lens' && lensPage !== 'intro') {
         lensBack();
+      } else if (activeTab === 'Footprint' && footprintPage === 'detail') {
+        setFootprintPage('results');
       } else if (activeTab === 'Footprint' && (footprintPage === 'scan' || footprintPage === 'results')) {
         setFootprintPage('accounts');
       } else if (activeTab === 'Footprint' && footprintPage === 'accounts') {
@@ -244,6 +260,20 @@ export default function App() {
             availableTabs={availableTabs}
             onTabPress={changeTab}
             onChooseAccounts={() => setFootprintPage('accounts')}
+            onOpenFinding={openFinding}
+          />
+        </View>
+        <View
+          style={[styles.page, !showingFindingDetail && styles.hidden]}
+          accessibilityElementsHidden={!showingFindingDetail}
+          importantForAccessibility={showingFindingDetail ? 'auto' : 'no-hide-descendants'}
+        >
+          <FindingDetailScreen
+            finding={selectedFinding}
+            onBack={() => setFootprintPage('results')}
+            // Wired to the action sheet and resolutions in the next steps.
+            onChooseAction={() => {}}
+            onKeep={() => {}}
           />
         </View>
         <View
