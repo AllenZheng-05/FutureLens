@@ -1,3 +1,4 @@
+
 import { Image, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -85,7 +86,7 @@ export function MyLensScreen({ savedLens, onStartSetup, onEditLens, onTabPress, 
         </ScrollView>
 
         <View style={styles.action}>
-          <PrimaryButton label="Edit my Lens" onPress={onEditLens ?? onStartSetup} style={styles.setupButton} />
+          <PrimaryButton label="Edit my Lens" onPress={onEditLens ?? onStartSetup} style={styles.savedSetupButton} />
         </View>
         <BottomTabs activeTab="My Lens" onTabPress={onTabPress} availableTabs={availableTabs} />
       </View>
@@ -99,7 +100,7 @@ export function MyLensScreen({ savedLens, onStartSetup, onEditLens, onTabPress, 
         <Text accessibilityRole="header" style={styles.title}>Set up my Future Lens</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView style={styles.body} contentContainerStyle={styles.content}>
         <LensIllustration />
         <Text accessibilityRole="header" style={styles.introTitle}>
           Tell Future Lens what matters to you
@@ -109,7 +110,7 @@ export function MyLensScreen({ savedLens, onStartSetup, onEditLens, onTabPress, 
         </Text>
       </ScrollView>
 
-      <View style={styles.action}>
+      <View style={styles.introAction}>
         <PrimaryButton
           label="Set up my Lens"
           onPress={onStartSetup}
@@ -125,12 +126,18 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: theme.colors.background },
   header: { paddingHorizontal: theme.space.lg, paddingBottom: theme.space.lg },
   title: { color: theme.colors.ink, fontSize: 28, fontWeight: '700', lineHeight: 34 },
+
+  // Center the introductory illustration and text like Footprint.
+  body: { flex: 1 },
   content: {
+    flexGrow: 1,
+    minHeight: 340,
     alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingTop: 48,
-    paddingBottom: theme.space.xl,
+    justifyContent: 'center',
+    paddingHorizontal: theme.space.xl,
+    paddingVertical: 20,
   },
+
   illustration: { width: 160, height: 160 },
   disc: { position: 'absolute', left: 0, top: 0, width: 160, height: 160 },
   center: { position: 'absolute', left: 52, top: 52, width: 56, height: 56 },
@@ -140,13 +147,16 @@ const styles = StyleSheet.create({
   red: { position: 'absolute', left: 0.5, top: 139, width: 20, height: 20 },
   greenBottom: { position: 'absolute', left: 139.5, top: 139, width: 20, height: 20 },
   ring: { position: 'absolute', left: 24, top: 24, width: 112, height: 112 },
+
+  // Match the main text styling of Footprint.
   introTitle: {
-    maxWidth: 329,
-    marginTop: 40,
+    width: '100%',
+    maxWidth: 320,
+    marginTop: 16,
     color: theme.colors.heading,
-    fontSize: 17,
-    fontWeight: '700',
-    lineHeight: 22,
+    fontSize: 22,
+    fontWeight: '600',
+    lineHeight: 30,
     textAlign: 'center',
   },
   description: {
@@ -157,8 +167,24 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     textAlign: 'center',
   },
+
+  // Original action styling retained for the saved Lens screen.
   action: { paddingHorizontal: theme.space.sm, paddingVertical: theme.space.sm },
-  setupButton: { minHeight: 54 },
+  savedSetupButton: { minHeight: 54 },
+
+  // Match Footprint's button size and positioning on the intro screen.
+  introAction: {
+    paddingHorizontal: theme.space.xl,
+    paddingTop: theme.space.sm,
+    paddingBottom: 10,
+  },
+  setupButton: {
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: 287,
+    minHeight: 54,
+  },
+
   savedContent: { paddingHorizontal: theme.space.lg, paddingBottom: theme.space.xl, gap: theme.space.lg },
   statusCard: { flexDirection: 'row', alignItems: 'center', gap: theme.space.md, padding: theme.space.lg, borderWidth: 1, borderColor: theme.colors.primary, borderRadius: theme.radius.card, backgroundColor: theme.colors.chipFill },
   statusText: { flex: 1 },
