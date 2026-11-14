@@ -6,11 +6,15 @@ import { FixActionSheet } from '../components/FixActionSheet';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { RiskBadge } from '../components/RiskBadge';
 import { theme } from '../theme';
-import type { CheckPostRequest, FixKind, PostCheckResult, ReaderId } from '../types/checkPost';
+import type { CheckPostRequest, FixKind, PostCheckResult } from '../types/checkPost';
 
 type Props = {
   request: CheckPostRequest;
   result: PostCheckResult;
+  // Set when the draft's audience is wider than the Lens's sharing rule.
+  lensNote?: string;
+  // Explains the private fix in terms of the Lens rule; shown in the fix sheet.
+  privateHint?: string;
   onBack: () => void;
   onPostAnyway: () => void;
   onChooseFix: (kind: FixKind) => void;
@@ -20,8 +24,10 @@ const riskRank = { high: 2, medium: 1, low: 0 } as const;
 
 // Figma: Check - 5. Reader cards with the selected reader's interpretation shown
 // inline (instead of Check - 5b1's popup), plus the dashed draft preview.
-export function CheckReadingScreen({ request, result, onBack, onPostAnyway, onChooseFix }: Props) {
-  const [selectedId, setSelectedId] = useState<ReaderId>(
+export function CheckReadingScreen({
+  request, result, lensNote, privateHint, onBack, onPostAnyway, onChooseFix,
+}: Props) {
+  const [selectedId, setSelectedId] = useState<string>(
     // Open on the reader with the biggest concern.
     [...result.readers].sort((a, b) => riskRank[b.risk] - riskRank[a.risk])[0]?.id ?? 'employers',
   );
@@ -40,16 +46,20 @@ export function CheckReadingScreen({ request, result, onBack, onPostAnyway, onCh
               <Pressable
                 key={reader.id}
                 accessibilityRole="radio"
-                accessibilityLabel={`${reader.label}: ${reader.risk} concern`}
+                accessibilityLabel={`${reader.label}${reader.inLens ? ', in your Lens' : ''}: ${reader.risk} concern`}
                 accessibilityState={{ checked: selectedReader }}
                 onPress={() => setSelectedId(reader.id)}
                 style={({ pressed }) => [
                   styles.readerCard,
+                  reader.inLens && styles.lensReaderCard,
                   selectedReader && styles.selectedReaderCard,
                   pressed && styles.pressed,
                 ]}
               >
-                <Text numberOfLines={1} style={styles.readerLabel}>{reader.label}</Text>
+                <View style={styles.readerText}>
+                  <Text numberOfLines={1} style={styles.readerLabel}>{reader.label}</Text>
+                  {reader.inLens && <Text style={styles.lensTag}>In your Lens</Text>}
+                </View>
                 <View accessible={false} style={[styles.dot, { backgroundColor: theme.colors[`${reader.risk}Dot`] }]} />
               </Pressable>
             );
@@ -63,6 +73,13 @@ export function CheckReadingScreen({ request, result, onBack, onPostAnyway, onCh
               <RiskBadge risk={selected.risk} compact />
             </View>
             <Text style={styles.reading}>{selected.reading}</Text>
+          </View>
+        )}
+
+        {lensNote && (
+          <View accessibilityLiveRegion="polite" style={styles.lensNote}>
+            <Text style={styles.lensNoteLabel}>Your Lens</Text>
+            <Text style={styles.lensNoteText}>{lensNote}</Text>
           </View>
         )}
 
@@ -88,6 +105,7 @@ export function CheckReadingScreen({ request, result, onBack, onPostAnyway, onCh
         visible={showFixSheet}
         hasRewrites={result.rewrites.length > 0}
         hasContexts={result.contexts.length > 0}
+        privateHint={privateHint}
         onSelect={(kind) => {
           setShowFixSheet(false);
           onChooseFix(kind);
@@ -117,7 +135,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   selectedReaderCard: { backgroundColor: theme.colors.chipFill, borderColor: theme.colors.primary },
-  readerLabel: { flex: 1, minWidth: 0, color: theme.colors.ink, fontSize: 13, fontWeight: '600', lineHeight: 18 },
+  lensReaderCard: { borderColor: theme.colors.primary },
+  readerText: { flex: 1, minWidth: 0, gap: 1 },
+  readerLabel: { color: theme.colors.ink, fontSize: 13, fontWeight: '600', lineHeight: 18 },
+  lensTag: { color: theme.colors.primary, fontSize: 10, fontWeight: '600', lineHeight: 13 },
   dot: { width: 10, height: 10, borderRadius: 5 },
   interpretation: {
     backgroundColor: theme.colors.surface,
@@ -130,6 +151,14 @@ const styles = StyleSheet.create({
   interpretationHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: theme.space.sm },
   readerTitle: { color: theme.colors.ink, fontSize: 15, fontWeight: '600', lineHeight: 20 },
   reading: { color: theme.colors.ink600, fontSize: 14, lineHeight: 21 },
+  lensNote: {
+    backgroundColor: theme.colors.chipFill,
+    borderRadius: theme.radius.card,
+    padding: theme.space.lg,
+    gap: theme.space.xs,
+  },
+  lensNoteLabel: { color: theme.colors.primary, fontSize: 13, fontWeight: '600', lineHeight: 18 },
+  lensNoteText: { color: theme.colors.ink, fontSize: 14, lineHeight: 20 },
   draftBox: {
     minHeight: 160,
     borderWidth: 1.5,

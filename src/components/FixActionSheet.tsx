@@ -9,12 +9,16 @@ type Props = {
   // Presets exist for rewrite and context fixes only on the sample drafts.
   hasRewrites: boolean;
   hasContexts: boolean;
+  // When the Lens has a rule for this draft's topic, the private fix explains it.
+  privateHint?: string;
   onSelect: (kind: FixKind) => void;
   onCancel: () => void;
 };
 
 // Figma: Check - 5c. The sheet over the reading page with the three fix paths.
-export function FixActionSheet({ visible, hasRewrites, hasContexts, onSelect, onCancel }: Props) {
+export function FixActionSheet({
+  visible, hasRewrites, hasContexts, privateHint, onSelect, onCancel,
+}: Props) {
   const insets = useSafeAreaInsets();
   if (!visible) return null;
 
@@ -63,7 +67,12 @@ export function FixActionSheet({ visible, hasRewrites, hasContexts, onSelect, on
                   onPress={() => onSelect(option.kind)}
                   style={({ pressed }) => [styles.option, pressed && styles.pressed]}
                 >
-                  <Text style={styles.optionLabel}>{option.label}</Text>
+                  <View style={styles.optionText}>
+                    <Text style={styles.optionLabel}>{option.label}</Text>
+                    {option.kind === 'private' && privateHint && (
+                      <Text style={styles.optionHint}>{privateHint}</Text>
+                    )}
+                  </View>
                   <Text accessible={false} style={styles.chevron}>{'>'}</Text>
                 </Pressable>
               ))}
@@ -116,7 +125,9 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
     borderRadius: 12,
   },
-  optionLabel: { flex: 1, color: theme.colors.ink, fontSize: 15, lineHeight: 20 },
+  optionLabel: { color: theme.colors.ink, fontSize: 15, lineHeight: 20 },
+  optionText: { flex: 1, minWidth: 0, gap: 2 },
+  optionHint: { color: theme.colors.muted, fontSize: 12, lineHeight: 17 },
   chevron: { color: theme.colors.inactive, fontSize: 15 },
   cancel: { minHeight: 44, marginTop: theme.space.md, alignItems: 'center', justifyContent: 'center' },
   cancelLabel: { color: theme.colors.primary, fontSize: 13, fontWeight: '500', lineHeight: 18 },

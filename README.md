@@ -99,6 +99,11 @@ the device's system font in place of Inter, which has not been bundled.
 - Check with Lens opens "How this could be read": reader cards (Employers,
   Classmates, No Context, Close Friends) with the selected reader's take shown
   inline, the dashed draft preview, Post anyway, and Fix this post.
+- With a Lens saved, results focus through it: reader cards matching chosen
+  perspectives get an "In your Lens" tag and move to the front, extra
+  perspective cards appear (Voters & press, Admissions officers, Old rivals),
+  readings shift when the draft's topic is one the Lens watches, and a "Your
+  Lens" note appears when the audience is wider than the Lens's sharing rule.
 - Fix this post opens a sheet: Rewrite it, Add context, or Share somewhere more
   private (moves the post to Friends and goes to Ready to share).
 - Choosing a rewrite or context option leads to Ready to share, which offers
@@ -116,6 +121,76 @@ app's navigation.
 The screen uses safe-area insets, a scrolling content area, touch targets of at
 least 44 points, and keyboard avoidance on iOS. The tab bar hides while the
 keyboard is visible. Review these interactions on a phone before the live demo.
+
+### Demo scenarios: Check a post meets My Lens
+
+Scripted walk-throughs for showing the check flow and its Lens integration.
+Each takes about a minute. Nothing is saved between app restarts, so run them
+in order in one session. My Lens state (a saved Lens) is the only setup they
+need.
+
+#### 1. Baseline: the samples without a Lens
+
+With no Lens saved (fresh app, or never finishing My Lens setup):
+
+1. Check tab → load the **Student meeting** sample → **Check with Lens**.
+2. Point out: *Employers* and *No Context* show **High** dots. The page opens on
+   the riskiest reader, and its reading appears inline under the cards — tap
+   *Classmates* to show the same post reading as harmless to them.
+3. **Fix this post** → **Rewrite it** → pick *"Can't wait to win the debate…"*
+   → **Use this Rewrite** → **Copy post** (Copied ✓) → **Done**.
+4. Point out: Done returns to the composer with the rewrite in place — check
+   again and the risk drops.
+
+#### 2. The Lens refocuses the same post
+
+Set up once via **My Lens** tab: goal *Land an internship or job*; perspectives
+*Future employers*, *Voters & press*, and *Strangers with no context*; topics
+*Jokes & sarcasm*; save with default sharing rules.
+
+1. Re-check the **Student meeting** sample (same text as scenario 1).
+2. Point out, in order:
+   - *Employers* and *No Context* now carry **"In your Lens"** tags and sit at
+     the front of the grid.
+   - A new **Voters & press** card appears — a perspective with no default card.
+   - The *Employers* and *No Context* readings are reworded: because the Lens
+     watches *Jokes & sarcasm*, they call out that the post never says it's a joke.
+   - A purple **"Your Lens"** note: the default rules keep jokes to Friends on a
+     public account, and this sample posts Public.
+3. Open the fix sheet: **Share somewhere more private** now explains itself —
+   *"Move to Friends — your Lens says keep Jokes & sarcasm there."* Choose it.
+4. Point out: Ready to share notes the smaller audience.
+
+#### 3. The rule depends on where you share
+
+Still with that Lens:
+
+1. Check the **Student meeting** sample, but switch its **Audience** chip to
+   **Friends** before checking.
+2. Point out: the "Your Lens" note is **gone** — a Friends post already obeys
+   the friends-account rule, so the post only looked risky in Public.
+3. Now check the **Career update** sample with its audience switched to
+   **Public**. The note reappears, this time for *Opinions I may change* —
+   proving the rule check is per topic, per account, not hardcoded to one draft.
+
+#### 4. Results are snapshotted at check time
+
+1. From the reading page of any checked draft, switch to the **My Lens** tab,
+   edit the Lens (e.g. remove *Voters & press*), and save.
+2. Return to the Check tab: the reading page is **unchanged** — it was checked
+   through the Lens as it was when you pressed Check.
+3. Go back to the composer and **Check with Lens** again: the removed card is
+   gone and the order updated.
+
+#### 5. Custom drafts stay useful
+
+1. Type your own draft (anything), leave audience **Public**, check.
+2. Point out: the four readers still give a read (employers/strangers lean
+   cautious, friends/classmates lean generous), and chosen Lens perspectives
+   still add their cards.
+3. Open the fix sheet: **Rewrite it** and **Add context** are hidden — presets
+   only exist for the sample drafts — so the honest options are the private
+   share and editing the draft yourself.
 
 ### My Lens introduction: UI checkpoint
 
@@ -404,10 +479,12 @@ cleanup flow (Footprint - 6 to 14) was built the same way on the `Footprint`
 branch. Real social integrations and analysis remain open.
 
 Task 1's demo analysis is preset, not generated: `App.tsx` stores the checked
-draft and walks the Check - 5 to Check - 7 frames (`CheckReadingScreen`,
-`ChooseFixScreen`, `ReadyToShareScreen`) with results from
-`src/data/postCheckResults.ts`, matched by draft text (the sample drafts have
-dedicated readers, rewrites and contexts; anything else gets a generic set). Real
+draft (plus a snapshot of the saved Lens at check time) and walks the
+Check - 5 to Check - 7 frames (`CheckReadingScreen`, `ChooseFixScreen`,
+`ReadyToShareScreen`) with results from `buildPostCheckResult` in
+`src/data/postCheckResults.ts`, matched by draft text. The sample drafts have
+dedicated readers, rewrites, contexts, and per-perspective Lens readings;
+anything else gets a generic set. Real
 analysis remains open.
 
 ### Verification

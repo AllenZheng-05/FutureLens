@@ -31,7 +31,7 @@ import { demoFootprintFindings } from './src/data/demoFootprintFindings';
 import { immediateResolutions, resolutionLabels } from './src/data/findingActions';
 import { describeLensFocus, goalOptions } from './src/data/goalOptions';
 import { defaultSharingRules, perspectiveOptions, topicOptions } from './src/data/lensOptions';
-import { findPostCheckResult } from './src/data/postCheckResults';
+import { buildPostCheckResult } from './src/data/postCheckResults';
 import type { CheckPostRequest, FixKind, FixOption } from './src/types/checkPost';
 import type { DemoAccountId, DemoScanRequest, FindingAction, Resolution, ResolutionNotice } from './src/types/footprint';
 import type { GoalId, LensOption, PerspectiveId, SavedLens, SharingRules, TopicId } from './src/types/lens';
@@ -76,6 +76,9 @@ export default function App() {
   const [checkRequest, setCheckRequest] = useState<CheckPostRequest | null>(null);
   // The post the user settled on (maybe rewritten or with context), shown on Ready to share.
   const [finalPost, setFinalPost] = useState<CheckPostRequest | null>(null);
+  // Snapshot of the saved Lens taken at check time, so results stay stable
+  // while reviewing even if the Lens is edited on another tab.
+  const [checkLens, setCheckLens] = useState<SavedLens | null>(null);
   // Seed for a composer remount, e.g. when a rewrite from the results replaces the draft.
   const [composerSeed, setComposerSeed] = useState<CheckPostRequest | null>(null);
   const [composerKey, setComposerKey] = useState(0);
@@ -121,7 +124,7 @@ export default function App() {
   const showingChooseContext = activeTab === 'Check' && checkPage === 'context';
   const showingReadyToShare = activeTab === 'Check' && checkPage === 'ready';
   const showingComposer = activeTab === 'Check' && checkPage === 'composer';
-  const checkResult = checkRequest ? findPostCheckResult(checkRequest.draft) : null;
+  const checkResult = checkRequest ? buildPostCheckResult(checkRequest, checkLens) : null;
   // True when the private-share fix moved the post to a smaller audience.
   const audienceChanged = finalPost !== null && checkRequest !== null
     && finalPost.audience !== checkRequest.audience;
@@ -136,9 +139,11 @@ export default function App() {
     setActiveTab(tab);
   }
 
-  // Runs the demo check: the reading page shows the preset analysis for this draft.
+  // Runs the demo check: the reading page shows the preset analysis for this
+  // draft, focused through the Lens saved at this moment.
   function runCheck(request: CheckPostRequest) {
     setCheckRequest(request);
+    setCheckLens(savedLens);
     setFinalPost(null);
     setCheckPage('reading');
   }
@@ -179,6 +184,7 @@ export default function App() {
     }
     setFinalPost(null);
     setCheckRequest(null);
+    setCheckLens(null);
     setCheckPage('composer');
   }
 
@@ -392,6 +398,8 @@ export default function App() {
             <CheckReadingScreen
               request={checkRequest}
               result={checkResult}
+              lensNote={checkResult.lensNote}
+              privateHint={checkResult.privateHint}
               onBack={() => setCheckPage('composer')}
               onPostAnyway={postAnyway}
               onChooseFix={chooseCheckFix}
