@@ -8,6 +8,7 @@ import { FindingActionSheet } from './src/components/FindingActionSheet';
 import { ScanConfirmationSheet } from './src/components/ScanConfirmationSheet';
 import { AccountSelectionScreen } from './src/screens/AccountSelectionScreen';
 import { CheckPostScreen } from './src/screens/CheckPostScreen';
+import { EditCaptionScreen } from './src/screens/EditCaptionScreen';
 import { FindingDetailScreen } from './src/screens/FindingDetailScreen';
 import { FootprintScreen } from './src/screens/FootprintScreen';
 import { FootprintResultsScreen } from './src/screens/FootprintResultsScreen';
@@ -55,10 +56,10 @@ function summarizeLens(lens: SavedLens): SavedLensSummary {
 
 const availableTabs: readonly Tab[] = ['Check', 'My Lens', 'Footprint'];
 
-type FootprintPage = 'intro' | 'accounts' | 'scan' | 'results' | 'detail';
+type FootprintPage = 'intro' | 'accounts' | 'scan' | 'results' | 'detail' | 'edit';
 
 // Pages reached after a scan. Returning to the Footprint tab keeps the user on these.
-const footprintReviewPages: readonly FootprintPage[] = ['results', 'detail'];
+const footprintReviewPages: readonly FootprintPage[] = ['results', 'detail', 'edit'];
 
 function previewCheck(_request: CheckPostRequest) {
   // Replace this callback with the teammate-owned check/results flow.
@@ -97,6 +98,7 @@ export default function App() {
   const showingScan = activeTab === 'Footprint' && footprintPage === 'scan';
   const showingResults = activeTab === 'Footprint' && footprintPage === 'results';
   const showingFindingDetail = activeTab === 'Footprint' && footprintPage === 'detail';
+  const showingEditCaption = activeTab === 'Footprint' && footprintPage === 'edit';
   const selectedFinding = demoFootprintFindings.find(finding => finding.id === selectedFindingId);
   const showingMyLens = activeTab === 'My Lens' && lensPage === 'intro';
   const showingGoals = activeTab === 'My Lens' && lensPage === 'goals';
@@ -162,9 +164,13 @@ export default function App() {
       setShowDeleteConfirm(true);
       return;
     }
+    if (action === 'edit') {
+      setFootprintPage('edit');
+      return;
+    }
     const resolution = immediateResolutions[action];
     if (resolution) resolveSelectedFinding(resolution);
-    // Edit caption and Request removal open their own screens in the next steps.
+    // Request removal opens its own screen in the next step.
   }
 
   // After a step: go on to the next one, or back to the summary when editing.
@@ -257,6 +263,8 @@ export default function App() {
         setShowDeleteConfirm(false);
       } else if (activeTab === 'My Lens' && lensPage !== 'intro') {
         lensBack();
+      } else if (activeTab === 'Footprint' && footprintPage === 'edit') {
+        setFootprintPage('detail');
       } else if (activeTab === 'Footprint' && footprintPage === 'detail') {
         setFootprintPage('results');
       } else if (activeTab === 'Footprint' && (footprintPage === 'scan' || footprintPage === 'results')) {
@@ -324,6 +332,19 @@ export default function App() {
             onBack={() => setFootprintPage('results')}
             onChooseAction={() => setShowActionSheet(true)}
             onKeep={() => resolveSelectedFinding('kept')}
+          />
+        </View>
+        <View
+          style={[styles.page, !showingEditCaption && styles.hidden]}
+          accessibilityElementsHidden={!showingEditCaption}
+          importantForAccessibility={showingEditCaption ? 'auto' : 'no-hide-descendants'}
+        >
+          <EditCaptionScreen
+            // Remount per finding so the field starts from that post's text.
+            key={`edit-${selectedFindingId}`}
+            finding={selectedFinding}
+            onBack={() => setFootprintPage('detail')}
+            onSave={() => resolveSelectedFinding('edited')}
           />
         </View>
         <View
