@@ -16,13 +16,14 @@ type Props = {
   availableTabs: readonly Tab[];
   onTabPress: (tab: Tab) => void;
   onChooseAccounts: () => void;
+  onOpenFinding?: (findingId: string) => void;
 };
 
 const risks: readonly FindingRisk[] = ['high', 'medium', 'low'];
 
 // Footprint - 5: user-provided screenshot plus previously retrieved Figma geometry.
 // All filtering is over static fixtures; there is no analysis or personalization.
-export function FootprintResultsScreen({ findings, availableTabs, onTabPress, onChooseAccounts }: Props) {
+export function FootprintResultsScreen({ findings, availableTabs, onTabPress, onChooseAccounts, onOpenFinding }: Props) {
   const insets = useSafeAreaInsets();
   const [category, setCategory] = useState<FindingFilter>('all');
   const [matchesGoalsOnly, setMatchesGoalsOnly] = useState(true);
@@ -84,14 +85,22 @@ export function FootprintResultsScreen({ findings, availableTabs, onTabPress, on
 
         <View style={styles.findings}>
           {visibleFindings.map(finding => (
-            <View key={finding.id} style={styles.finding}>
+            <Pressable
+              key={finding.id}
+              accessibilityRole="button"
+              accessibilityLabel={`${finding.title}. ${finding.reason}. ${finding.source}. ${finding.risk} risk`}
+              accessibilityHint="Opens this item for review"
+              onPress={() => onOpenFinding?.(finding.id)}
+              style={({ pressed }) => [styles.finding, pressed && styles.pressed]}
+            >
               <View accessible={false} style={styles.avatar} />
               <View style={styles.findingText}>
                 <Text numberOfLines={1} style={styles.findingTitle}>{finding.title}</Text>
+                <Text numberOfLines={2} style={styles.findingReason}>{finding.reason}</Text>
                 <Text style={styles.findingSource}>{finding.source}</Text>
               </View>
               <RiskBadge risk={finding.risk} compact />
-            </View>
+            </Pressable>
           ))}
           {visibleFindings.length === 0 && (
             <Text accessibilityLiveRegion="polite" style={styles.empty}>No sample findings match these filters.</Text>
@@ -132,7 +141,8 @@ const styles = StyleSheet.create({
   avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: theme.colors.avatarFill },
   findingText: { flex: 1, minWidth: 0, gap: 2 },
   findingTitle: { color: theme.colors.ink, fontSize: 15, fontWeight: '600', lineHeight: 20 },
-  findingSource: { color: theme.colors.accountMuted, fontSize: 13, lineHeight: 18 },
+  findingReason: { color: theme.colors.ink600, fontSize: 13, lineHeight: 18 },
+  findingSource: { color: theme.colors.accountMuted, fontSize: 12, lineHeight: 16 },
   empty: { paddingVertical: theme.space.xl, color: theme.colors.muted, fontSize: 15, lineHeight: 22, textAlign: 'center' },
   demoNote: { marginTop: theme.space.lg, color: theme.colors.muted, fontSize: 12, lineHeight: 18 },
   chooseAccounts: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: theme.space.sm },
