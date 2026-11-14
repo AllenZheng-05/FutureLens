@@ -11,6 +11,7 @@ import { CheckPostScreen } from './src/screens/CheckPostScreen';
 import { EditCaptionScreen } from './src/screens/EditCaptionScreen';
 import { FindingDetailScreen } from './src/screens/FindingDetailScreen';
 import { FootprintScreen } from './src/screens/FootprintScreen';
+import { FootprintProgressScreen } from './src/screens/FootprintProgressScreen';
 import { FootprintResultsScreen } from './src/screens/FootprintResultsScreen';
 import { MyLensScreen } from './src/screens/MyLensScreen';
 import { RequestRemovalScreen } from './src/screens/RequestRemovalScreen';
@@ -57,10 +58,10 @@ function summarizeLens(lens: SavedLens): SavedLensSummary {
 
 const availableTabs: readonly Tab[] = ['Check', 'My Lens', 'Footprint'];
 
-type FootprintPage = 'intro' | 'accounts' | 'scan' | 'results' | 'detail' | 'edit' | 'removal';
+type FootprintPage = 'intro' | 'accounts' | 'scan' | 'results' | 'detail' | 'edit' | 'removal' | 'progress';
 
 // Pages reached after a scan. Returning to the Footprint tab keeps the user on these.
-const footprintReviewPages: readonly FootprintPage[] = ['results', 'detail', 'edit', 'removal'];
+const footprintReviewPages: readonly FootprintPage[] = ['results', 'detail', 'edit', 'removal', 'progress'];
 
 function previewCheck(_request: CheckPostRequest) {
   // Replace this callback with the teammate-owned check/results flow.
@@ -101,6 +102,7 @@ export default function App() {
   const showingFindingDetail = activeTab === 'Footprint' && footprintPage === 'detail';
   const showingEditCaption = activeTab === 'Footprint' && footprintPage === 'edit';
   const showingRequestRemoval = activeTab === 'Footprint' && footprintPage === 'removal';
+  const showingProgress = activeTab === 'Footprint' && footprintPage === 'progress';
   const selectedFinding = demoFootprintFindings.find(finding => finding.id === selectedFindingId);
   const showingMyLens = activeTab === 'My Lens' && lensPage === 'intro';
   const showingGoals = activeTab === 'My Lens' && lensPage === 'goals';
@@ -270,7 +272,7 @@ export default function App() {
         lensBack();
       } else if (activeTab === 'Footprint' && (footprintPage === 'edit' || footprintPage === 'removal')) {
         setFootprintPage('detail');
-      } else if (activeTab === 'Footprint' && footprintPage === 'detail') {
+      } else if (activeTab === 'Footprint' && (footprintPage === 'detail' || footprintPage === 'progress')) {
         setFootprintPage('results');
       } else if (activeTab === 'Footprint' && (footprintPage === 'scan' || footprintPage === 'results')) {
         setFootprintPage('accounts');
@@ -325,6 +327,10 @@ export default function App() {
             onChooseAccounts={() => setFootprintPage('accounts')}
             onOpenFinding={openFinding}
             onUndo={undoResolution}
+            onShowProgress={() => {
+              setResolutionNotice(null);
+              setFootprintPage('progress');
+            }}
           />
         </View>
         <View
@@ -363,6 +369,22 @@ export default function App() {
             finding={selectedFinding}
             onBack={() => setFootprintPage('detail')}
             onSend={() => resolveSelectedFinding('removal-requested')}
+          />
+        </View>
+        <View
+          style={[styles.page, !showingProgress && styles.hidden]}
+          accessibilityElementsHidden={!showingProgress}
+          importantForAccessibility={showingProgress ? 'auto' : 'no-hide-descendants'}
+        >
+          <FootprintProgressScreen
+            findings={demoFootprintFindings}
+            resolutions={resolutions}
+            onBack={() => setFootprintPage('results')}
+            onDone={() => setFootprintPage('results')}
+            onBackToCheck={() => {
+              setFootprintPage('results');
+              changeTab('Check');
+            }}
           />
         </View>
         <View

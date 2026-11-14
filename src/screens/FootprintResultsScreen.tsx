@@ -21,6 +21,7 @@ type Props = {
   onChooseAccounts: () => void;
   onOpenFinding: (findingId: string) => void;
   onUndo: () => void;
+  onShowProgress: () => void;
 };
 
 const risks: readonly FindingRisk[] = ['high', 'medium', 'low'];
@@ -37,6 +38,7 @@ export function FootprintResultsScreen({
   onChooseAccounts,
   onOpenFinding,
   onUndo,
+  onShowProgress,
 }: Props) {
   const insets = useSafeAreaInsets();
   const [category, setCategory] = useState<FindingFilter>('all');
@@ -75,6 +77,16 @@ export function FootprintResultsScreen({
               </View>
             ))}
           </View>
+          {Object.keys(resolutions).length > 0 && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityHint="Shows what a stranger can still find"
+              onPress={onShowProgress}
+              style={({ pressed }) => [styles.progressLink, pressed && styles.pressed]}
+            >
+              <Text style={styles.progressLinkLabel}>See your progress →</Text>
+            </Pressable>
+          )}
         </View>
 
         <View accessibilityRole="radiogroup" accessibilityLabel="Finding category" style={styles.filters}>
@@ -200,6 +212,8 @@ const styles = StyleSheet.create({
   findingTitle: { color: theme.colors.ink, fontSize: 15, fontWeight: '600', lineHeight: 20 },
   findingReason: { color: theme.colors.ink600, fontSize: 13, lineHeight: 18 },
   findingSource: { color: theme.colors.accountMuted, fontSize: 12, lineHeight: 16 },
+  progressLink: { minHeight: 44, justifyContent: 'center', marginTop: theme.space.xs },
+  progressLinkLabel: { color: theme.colors.primary, fontSize: 15, fontWeight: '600', lineHeight: 20 },
   resolvedCount: { color: theme.colors.muted, fontSize: 13, fontWeight: '400' },
   resolvedSection: { marginTop: theme.space.md, overflow: 'hidden', borderRadius: theme.radius.card, backgroundColor: theme.colors.disabledFill },
   resolvedHeader: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: theme.space.lg },
