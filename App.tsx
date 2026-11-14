@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, BackHandler, Keyboard, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Alert, BackHandler, Keyboard, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 import type { Tab } from './src/components/BottomTabs';
@@ -25,7 +25,7 @@ import { ScanProgressScreen } from './src/screens/ScanProgressScreen';
 import { SharingRulesScreen } from './src/screens/SharingRulesScreen';
 import { theme } from './src/theme';
 import { demoFootprintFindings } from './src/data/demoFootprintFindings';
-import { immediateResolutions } from './src/data/findingActions';
+import { immediateResolutions, resolutionLabels } from './src/data/findingActions';
 import { describeLensFocus, goalOptions } from './src/data/goalOptions';
 import { defaultSharingRules, perspectiveOptions, topicOptions } from './src/data/lensOptions';
 import type { CheckPostRequest } from './src/types/checkPost';
@@ -150,6 +150,8 @@ export default function App() {
     setShowActionSheet(false);
     setShowDeleteConfirm(false);
     setFootprintPage('results');
+    // The results page's live region covers Android; iOS needs an explicit announcement.
+    AccessibilityInfo.announceForAccessibility(`${resolutionLabels[resolution]}. Undo is available.`);
   }
 
   function undoResolution() {
@@ -160,6 +162,12 @@ export default function App() {
       return rest;
     });
     setResolutionNotice(null);
+    AccessibilityInfo.announceForAccessibility('Undone. The item is back in the list.');
+  }
+
+  function leaveResultsForAccounts() {
+    setResolutionNotice(null);
+    setFootprintPage('accounts');
   }
 
   function chooseFindingAction(action: FindingAction) {
@@ -275,7 +283,7 @@ export default function App() {
       } else if (activeTab === 'Footprint' && (footprintPage === 'detail' || footprintPage === 'progress')) {
         setFootprintPage('results');
       } else if (activeTab === 'Footprint' && (footprintPage === 'scan' || footprintPage === 'results')) {
-        setFootprintPage('accounts');
+        leaveResultsForAccounts();
       } else if (activeTab === 'Footprint' && footprintPage === 'accounts') {
         setFootprintPage('intro');
       } else {
@@ -324,7 +332,7 @@ export default function App() {
             notice={resolutionNotice}
             availableTabs={availableTabs}
             onTabPress={changeTab}
-            onChooseAccounts={() => setFootprintPage('accounts')}
+            onChooseAccounts={leaveResultsForAccounts}
             onOpenFinding={openFinding}
             onUndo={undoResolution}
             onShowProgress={() => {
