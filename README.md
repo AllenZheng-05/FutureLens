@@ -287,16 +287,73 @@ goal-match toggle, sample finding cards, and Footprint tab state.
   supplied screenshot. Turning off Matches my goals exposes three extra samples.
 - Category and goal-match filters combine, and the summary/counts reflect the
   visible sample rows. An empty state is available when no fixtures match.
+- Each card shows a one-line reason it was flagged, so users can triage without
+  opening every item (a DP3 usability fix). Tapping a card opens Review item.
 - Goal matches and risk levels are fixed fixture labels. No model, post checker,
   or personalization algorithm runs.
 - Results and filter selections survive changing tabs. Choose demo accounts
   again and Android back both return to account selection.
-- Finding cards are read-only. Finding-detail screens, edit/delete actions,
-  social integrations, and real scanning are outside this baseplate checkpoint.
 
-`FootprintResultsScreen` takes a `findings` array plus navigation callbacks. Its
-12 fictional items live in `src/data/demoFootprintFindings.ts`. The 2,140-post and
-3-site metadata are fixed demo values and do not describe real account access.
+`FootprintResultsScreen` takes `findings`, `resolutions`, the Undo `notice`, and
+navigation callbacks. Its 12 fictional items live in
+`src/data/demoFootprintFindings.ts`. The 2,140-post and 3-site metadata are fixed
+demo values and do not describe real account access.
+
+### Footprint cleanup flow (Footprint - 6 to 14)
+
+Tapping a result card runs the rest of the "Clean up your digital footprint"
+task. Nothing is posted, deleted, or sent: each choice only marks the finding as
+handled in app state for the session.
+
+- **Review item** (**Footprint - 6**, `76:1020`; **Footprint - 10**, `76:1262`):
+  posts, tags, and mentions show the text, date, visibility, why it's flagged,
+  an example quote when there is one, where people can find it, and the matching
+  goal. Listings show the site's fields and source instead. Posts also offer
+  Keep this one.
+- **Action sheet** (**Footprint - 7**, `76:1082`; **Footprint - 11**,
+  `76:1292`): choices depend on the category. Posts: Edit caption, Make private,
+  Delete post, Keep it. Listings: Ignore, Request removal. Tags (Remove tag,
+  Keep it) and mentions (Ask for removal, Keep it) have no Figma frame and reuse
+  the sheet. A guidance line explains when to pick which (a DP3 usability fix).
+- **Delete confirmation** (**Footprint - 8**, `76:1113`): Cancel or Delete.
+- **Edit caption** (no Figma frame; styled like Footprint - 12): shows the
+  original text and why it was flagged. Save stays disabled until the wording
+  changes.
+- **Request removal** (**Footprint - 12**, `76:1310`): site and page are filled
+  from the listing. Choosing a reason swaps in its message template unless the
+  message has been edited. Ask for removal on a mention opens the same form with
+  the hosting site, the mention's text, and mention-specific reasons and
+  messages.
+- **Results after an action** (**Footprint - 9**, `76:1144`; **Footprint - 13**,
+  `93:1342`): the item leaves the list, counts update ("7 things worth a look ·
+  2 resolved"), and a notice offers Undo until the next item is opened. Handled
+  items appear in a collapsible Resolved section. Screen readers hear each
+  resolution and undo.
+- **Your footprint now** (**Footprint - 14**, `93:1439`): opened from See your
+  progress on the results summary once something is resolved. Before and Now
+  count the findings that match the demo goals, so Now always equals the default
+  "things worth a look". Each line is worked out from what was resolved; kept or
+  ignored items count as still out there. Rescan monthly is a session-only
+  toggle and schedules nothing.
+
+Navigation: header Back and Android back go from Edit caption or Request removal
+to Review item, and from Review item or Your footprint now to the results. Open
+sheets and dialogs close first. Changing tabs closes them and keeps the current
+cleanup page. Edit caption and Request removal reset for each finding.
+
+Code layout:
+
+- `src/types/footprint.ts`: `FindingDetail` (post or listing), `FindingAction`,
+  `Resolution`, and `ResolutionNotice`.
+- `src/data/demoFootprintFindings.ts`: card reasons and Review item content.
+- `src/data/findingActions.ts`: actions per category, guidance lines,
+  resolution labels, and removal reasons.
+- `src/data/footprintProgress.ts`: `summarizeFootprintProgress` for Footprint - 14.
+- Screens: `FindingDetailScreen`, `EditCaptionScreen`, `RequestRemovalScreen`,
+  `FootprintProgressScreen`. Components: `FindingActionSheet`,
+  `DeleteConfirmDialog`.
+- `App.tsx` owns the selected finding, `resolutions`, the Undo notice, and the
+  sheet and dialog state.
 
 ## Tasks and implementation status
 
@@ -304,13 +361,15 @@ goal-match toggle, sample finding cards, and Footprint tab state.
 | --- | --- | --- |
 | Check a post | Draft input, sharing choices, sample drafts | Input UI complete; analysis/results pending |
 | Set up My Lens | Introduction, four setup steps, summary with Edit, confirmation, saved Lens | Works end to end; not yet applied to Check results |
-| Review digital footprint | Introduction, account selection, confirmation, demo progress/results | Mock results dashboard UI complete |
+| Review digital footprint | Introduction, account selection, confirmation, demo scan, results, Review item, actions, Edit caption, Request removal, Undo, progress summary | Works end to end on demo data |
 
 Hardcoded content: `src/data/sampleDrafts.ts` contains two fictional draft
 examples, `src/data/demoAccounts.ts` contains five fictional account rows, and
 `src/data/demoScan.ts` supplies the fictional post count and timed UI phases.
 `src/data/demoFootprintFindings.ts` contains 12 fictional findings, preset goal
-matches, risk labels, filter names, and the demo site count.
+matches, risk labels, card reasons, Review item details, filter names, and the
+demo site count. `src/data/findingActions.ts` supplies the action choices,
+guidance, and removal-request templates.
 `src/data/goalOptions.ts` supplies the five fixed goal choices, and
 `src/data/lensOptions.ts` supplies the six perspectives, six topics, account and
 audience labels, and default sharing rules.
@@ -334,8 +393,9 @@ is the task that works end to end for the November 3 demo.
 
 The original UI checkpoints ended at goal selection. The full My Lens setup flow
 was then built in reviewed increments (shared components, Steps 2–3, Step 4,
-summary, confirmation and saved Lens), each committed manually. Footprint
-finding-detail flows, real social integrations, and analysis remain open.
+summary, confirmation and saved Lens), each committed manually. The Footprint
+cleanup flow (Footprint - 6 to 14) was built the same way on the `Footprint`
+branch. Real social integrations and analysis remain open.
 
 Task 1's analysis, interpretation/results generation, and feature integration
 belong to the teammate. `previewCheck` remains a placeholder wired through

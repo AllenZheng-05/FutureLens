@@ -1,14 +1,20 @@
 import { useEffect, useState } from 'react';
-import { Alert, BackHandler, Keyboard, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Alert, BackHandler, Keyboard, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 import type { Tab } from './src/components/BottomTabs';
+import { DeleteConfirmDialog } from './src/components/DeleteConfirmDialog';
+import { FindingActionSheet } from './src/components/FindingActionSheet';
 import { ScanConfirmationSheet } from './src/components/ScanConfirmationSheet';
 import { AccountSelectionScreen } from './src/screens/AccountSelectionScreen';
 import { CheckPostScreen } from './src/screens/CheckPostScreen';
+import { EditCaptionScreen } from './src/screens/EditCaptionScreen';
+import { FindingDetailScreen } from './src/screens/FindingDetailScreen';
 import { FootprintScreen } from './src/screens/FootprintScreen';
+import { FootprintProgressScreen } from './src/screens/FootprintProgressScreen';
 import { FootprintResultsScreen } from './src/screens/FootprintResultsScreen';
 import { MyLensScreen } from './src/screens/MyLensScreen';
+import { RequestRemovalScreen } from './src/screens/RequestRemovalScreen';
 import type { SavedLensSummary } from './src/screens/MyLensScreen';
 import { GoalSelectionScreen } from './src/screens/GoalSelectionScreen';
 import { LensSetScreen } from './src/screens/LensSetScreen';
@@ -19,10 +25,11 @@ import { ScanProgressScreen } from './src/screens/ScanProgressScreen';
 import { SharingRulesScreen } from './src/screens/SharingRulesScreen';
 import { theme } from './src/theme';
 import { demoFootprintFindings } from './src/data/demoFootprintFindings';
+import { immediateResolutions, resolutionLabels } from './src/data/findingActions';
 import { describeLensFocus, goalOptions } from './src/data/goalOptions';
 import { defaultSharingRules, perspectiveOptions, topicOptions } from './src/data/lensOptions';
 import type { CheckPostRequest } from './src/types/checkPost';
-import type { DemoAccountId, DemoScanRequest } from './src/types/footprint';
+import type { DemoAccountId, DemoScanRequest, FindingAction, Resolution, ResolutionNotice } from './src/types/footprint';
 import type { GoalId, LensOption, PerspectiveId, SavedLens, SharingRules, TopicId } from './src/types/lens';
 
 type LensPage = 'intro' | 'goals' | 'perspectives' | 'topics' | 'sharing' | 'summary' | 'set';
@@ -51,6 +58,11 @@ function summarizeLens(lens: SavedLens): SavedLensSummary {
 
 const availableTabs: readonly Tab[] = ['Check', 'My Lens', 'Footprint'];
 
+type FootprintPage = 'intro' | 'accounts' | 'scan' | 'results' | 'detail' | 'edit' | 'removal' | 'progress';
+
+// Pages reached after a scan. Returning to the Footprint tab keeps the user on these.
+const footprintReviewPages: readonly FootprintPage[] = ['results', 'detail', 'edit', 'removal', 'progress'];
+
 function previewCheck(_request: CheckPostRequest) {
   // Replace this callback with the teammate-owned check/results flow.
   Alert.alert(
@@ -73,13 +85,25 @@ export default function App() {
   const [lensEditCount, setLensEditCount] = useState(0);
   // The last Lens saved from the summary; drafts above can differ until saved again.
   const [savedLens, setSavedLens] = useState<SavedLens | null>(null);
-  const [footprintPage, setFootprintPage] = useState<'intro' | 'accounts' | 'scan' | 'results'>('intro');
+  const [footprintPage, setFootprintPage] = useState<FootprintPage>('intro');
+  const [selectedFindingId, setSelectedFindingId] = useState<string | null>(null);
+  const [showActionSheet, setShowActionSheet] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // How each reviewed finding was handled, for this session only. Nothing is posted or deleted.
+  const [resolutions, setResolutions] = useState<Readonly<Record<string, Resolution>>>({});
+  // The latest resolution, shown on the results list with Undo.
+  const [resolutionNotice, setResolutionNotice] = useState<ResolutionNotice | null>(null);
   const [scanAccountIds, setScanAccountIds] = useState<readonly DemoAccountId[]>([]);
   const [showScanConfirmation, setShowScanConfirmation] = useState(false);
   const showingFootprint = activeTab === 'Footprint' && footprintPage === 'intro';
   const showingAccounts = activeTab === 'Footprint' && footprintPage === 'accounts';
   const showingScan = activeTab === 'Footprint' && footprintPage === 'scan';
   const showingResults = activeTab === 'Footprint' && footprintPage === 'results';
+  const showingFindingDetail = activeTab === 'Footprint' && footprintPage === 'detail';
+  const showingEditCaption = activeTab === 'Footprint' && footprintPage === 'edit';
+  const showingRequestRemoval = activeTab === 'Footprint' && footprintPage === 'removal';
+  const showingProgress = activeTab === 'Footprint' && footprintPage === 'progress';
+  const selectedFinding = demoFootprintFindings.find(finding => finding.id === selectedFindingId);
   const showingMyLens = activeTab === 'My Lens' && lensPage === 'intro';
   const showingGoals = activeTab === 'My Lens' && lensPage === 'goals';
   const showingPerspectives = activeTab === 'My Lens' && lensPage === 'perspectives';
@@ -92,7 +116,9 @@ export default function App() {
     if (!availableTabs.includes(tab)) return;
     Keyboard.dismiss();
     setShowScanConfirmation(false);
-    if (tab === 'Footprint' && footprintPage !== 'results') setFootprintPage('intro');
+    setShowActionSheet(false);
+    setShowDeleteConfirm(false);
+    if (tab === 'Footprint' && !footprintReviewPages.includes(footprintPage)) setFootprintPage('intro');
     setActiveTab(tab);
   }
 
@@ -107,6 +133,59 @@ export default function App() {
     setShowScanConfirmation(false);
     setScanAccountIds([...request.accountIds]);
     setFootprintPage('scan');
+  }
+
+  function openFinding(findingId: string) {
+    setSelectedFindingId(findingId);
+    setResolutionNotice(null);
+    setFootprintPage('detail');
+  }
+
+  // Marks the open finding as handled and returns to the results list with Undo.
+  function resolveSelectedFinding(resolution: Resolution) {
+    if (!selectedFindingId) return;
+    const findingId = selectedFindingId;
+    setResolutions(current => ({ ...current, [findingId]: resolution }));
+    setResolutionNotice({ findingId, resolution });
+    setShowActionSheet(false);
+    setShowDeleteConfirm(false);
+    setFootprintPage('results');
+    // The results page's live region covers Android; iOS needs an explicit announcement.
+    AccessibilityInfo.announceForAccessibility(`${resolutionLabels[resolution]}. Undo is available.`);
+  }
+
+  function undoResolution() {
+    if (!resolutionNotice) return;
+    const { findingId } = resolutionNotice;
+    setResolutions(current => {
+      const { [findingId]: _undone, ...rest } = current;
+      return rest;
+    });
+    setResolutionNotice(null);
+    AccessibilityInfo.announceForAccessibility('Undone. The item is back in the list.');
+  }
+
+  function leaveResultsForAccounts() {
+    setResolutionNotice(null);
+    setFootprintPage('accounts');
+  }
+
+  function chooseFindingAction(action: FindingAction) {
+    setShowActionSheet(false);
+    if (action === 'delete') {
+      setShowDeleteConfirm(true);
+      return;
+    }
+    if (action === 'edit') {
+      setFootprintPage('edit');
+      return;
+    }
+    if (action === 'request-removal' || action === 'ask-removal') {
+      setFootprintPage('removal');
+      return;
+    }
+    const resolution = immediateResolutions[action];
+    if (resolution) resolveSelectedFinding(resolution);
   }
 
   // After a step: go on to the next one, or back to the summary when editing.
@@ -193,10 +272,18 @@ export default function App() {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       if (showScanConfirmation) {
         setShowScanConfirmation(false);
+      } else if (showActionSheet) {
+        setShowActionSheet(false);
+      } else if (showDeleteConfirm) {
+        setShowDeleteConfirm(false);
       } else if (activeTab === 'My Lens' && lensPage !== 'intro') {
         lensBack();
+      } else if (activeTab === 'Footprint' && (footprintPage === 'edit' || footprintPage === 'removal')) {
+        setFootprintPage('detail');
+      } else if (activeTab === 'Footprint' && (footprintPage === 'detail' || footprintPage === 'progress')) {
+        setFootprintPage('results');
       } else if (activeTab === 'Footprint' && (footprintPage === 'scan' || footprintPage === 'results')) {
-        setFootprintPage('accounts');
+        leaveResultsForAccounts();
       } else if (activeTab === 'Footprint' && footprintPage === 'accounts') {
         setFootprintPage('intro');
       } else {
@@ -205,7 +292,7 @@ export default function App() {
       return true;
     });
     return () => subscription.remove();
-  }, [activeTab, lensPage, editingLens, savedLens, footprintPage, showScanConfirmation]);
+  }, [activeTab, lensPage, editingLens, savedLens, footprintPage, showScanConfirmation, showActionSheet, showDeleteConfirm]);
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
@@ -241,9 +328,71 @@ export default function App() {
         >
           <FootprintResultsScreen
             findings={demoFootprintFindings}
+            resolutions={resolutions}
+            notice={resolutionNotice}
             availableTabs={availableTabs}
             onTabPress={changeTab}
-            onChooseAccounts={() => setFootprintPage('accounts')}
+            onChooseAccounts={leaveResultsForAccounts}
+            onOpenFinding={openFinding}
+            onUndo={undoResolution}
+            onShowProgress={() => {
+              setResolutionNotice(null);
+              setFootprintPage('progress');
+            }}
+          />
+        </View>
+        <View
+          style={[styles.page, !showingFindingDetail && styles.hidden]}
+          accessibilityElementsHidden={!showingFindingDetail}
+          importantForAccessibility={showingFindingDetail ? 'auto' : 'no-hide-descendants'}
+        >
+          <FindingDetailScreen
+            finding={selectedFinding}
+            onBack={() => setFootprintPage('results')}
+            onChooseAction={() => setShowActionSheet(true)}
+            onKeep={() => resolveSelectedFinding('kept')}
+          />
+        </View>
+        <View
+          style={[styles.page, !showingEditCaption && styles.hidden]}
+          accessibilityElementsHidden={!showingEditCaption}
+          importantForAccessibility={showingEditCaption ? 'auto' : 'no-hide-descendants'}
+        >
+          <EditCaptionScreen
+            // Remount per finding so the field starts from that post's text.
+            key={`edit-${selectedFindingId}`}
+            finding={selectedFinding}
+            onBack={() => setFootprintPage('detail')}
+            onSave={() => resolveSelectedFinding('edited')}
+          />
+        </View>
+        <View
+          style={[styles.page, !showingRequestRemoval && styles.hidden]}
+          accessibilityElementsHidden={!showingRequestRemoval}
+          importantForAccessibility={showingRequestRemoval ? 'auto' : 'no-hide-descendants'}
+        >
+          <RequestRemovalScreen
+            // Remount per listing so the form starts from the default reason and message.
+            key={`removal-${selectedFindingId}`}
+            finding={selectedFinding}
+            onBack={() => setFootprintPage('detail')}
+            onSend={() => resolveSelectedFinding('removal-requested')}
+          />
+        </View>
+        <View
+          style={[styles.page, !showingProgress && styles.hidden]}
+          accessibilityElementsHidden={!showingProgress}
+          importantForAccessibility={showingProgress ? 'auto' : 'no-hide-descendants'}
+        >
+          <FootprintProgressScreen
+            findings={demoFootprintFindings}
+            resolutions={resolutions}
+            onBack={() => setFootprintPage('results')}
+            onDone={() => setFootprintPage('results')}
+            onBackToCheck={() => {
+              setFootprintPage('results');
+              changeTab('Check');
+            }}
           />
         </View>
         <View
@@ -378,6 +527,17 @@ export default function App() {
         accountIds={scanAccountIds}
         onCancel={() => setShowScanConfirmation(false)}
         onAllow={startDemoScan}
+      />
+      <FindingActionSheet
+        visible={showActionSheet && showingFindingDetail}
+        finding={selectedFinding}
+        onSelect={chooseFindingAction}
+        onCancel={() => setShowActionSheet(false)}
+      />
+      <DeleteConfirmDialog
+        visible={showDeleteConfirm && showingFindingDetail}
+        onCancel={() => setShowDeleteConfirm(false)}
+        onDelete={() => resolveSelectedFinding('deleted')}
       />
     </SafeAreaProvider>
   );
