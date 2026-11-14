@@ -28,6 +28,8 @@ export type PostFindingDetail = {
   quote?: string;
   whereFound: string;
   goal?: string;
+  // Set for mentions on other sites: where Ask for removal sends its request.
+  removal?: { site: string; page: string };
 };
 
 export type ListingFindingDetail = {

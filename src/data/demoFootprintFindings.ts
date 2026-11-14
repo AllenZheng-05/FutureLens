@@ -111,6 +111,7 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
       quote: 'Candidate called voters ‘idiots’',
       whereFound: 'Comments on a local news article',
       goal: 'Run for office',
+      removal: { site: 'Metro Daily', page: 'metrodaily.example/city-budget-vote#comments' },
     },
   },
   {
@@ -182,6 +183,7 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
       visibility: 'Public · community blog',
       whyFlagged: 'Links your full name to your school. Mostly positive.',
       whereFound: 'Community blog · Search results for your name',
+      removal: { site: 'Northside Community Blog', page: 'northside.example/food-drive-recap' },
     },
   },
   {

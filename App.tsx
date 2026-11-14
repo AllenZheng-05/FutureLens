@@ -180,7 +180,7 @@ export default function App() {
       setFootprintPage('edit');
       return;
     }
-    if (action === 'request-removal') {
+    if (action === 'request-removal' || action === 'ask-removal') {
       setFootprintPage('removal');
       return;
     }

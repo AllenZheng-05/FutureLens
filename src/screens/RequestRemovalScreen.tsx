@@ -14,18 +14,31 @@ type Props = {
   onSend: () => void;
 };
 
-// Figma: Footprint - 12 (76:1310). Nothing is sent; the listing is only marked as requested.
+type RemovalTarget = { kind: 'listing' | 'mention'; site: string; page: string; excerpt?: string };
+
+// Listings carry their own site and page; mentions name the site that hosts them.
+function removalTargetOf(finding: DemoFootprintFinding | undefined): RemovalTarget | null {
+  if (!finding) return null;
+  const { detail } = finding;
+  if (detail.kind === 'listing') return { kind: 'listing', site: detail.site, page: detail.page };
+  if (detail.removal) return { kind: 'mention', ...detail.removal, excerpt: detail.text };
+  return null;
+}
+
+// Figma: Footprint - 12 (76:1310), also used for Ask for removal on mentions.
+// Nothing is sent; the finding is only marked as requested.
 export function RequestRemovalScreen({ finding, onBack, onSend }: Props) {
   const insets = useSafeAreaInsets();
-  const [reasonId, setReasonId] = useState(removalReasons[0].id);
-  const [message, setMessage] = useState(removalReasons[0].message);
+  const target = removalTargetOf(finding);
+  const reasons = removalReasons[target?.kind ?? 'listing'];
+  const [reasonId, setReasonId] = useState(reasons[0].id);
+  const [message, setMessage] = useState(reasons[0].message);
   const [choosingReason, setChoosingReason] = useState(false);
-  if (!finding || finding.detail.kind !== 'listing') return null;
-  const { detail } = finding;
-  const reason = removalReasons.find(option => option.id === reasonId) ?? removalReasons[0];
+  if (!target) return null;
+  const reason = reasons.find(option => option.id === reasonId) ?? reasons[0];
 
   function chooseReason(id: string) {
-    const next = removalReasons.find(option => option.id === id);
+    const next = reasons.find(option => option.id === id);
     if (!next) return;
     // Keep the user's own wording; only swap in a template they haven't changed.
     if (message === reason.message) setMessage(next.message);
@@ -48,16 +61,25 @@ export function RequestRemovalScreen({ finding, onBack, onSend }: Props) {
         <View style={styles.field}>
           <Text style={styles.label}>Site</Text>
           <View style={styles.box}>
-            <Text style={styles.value}>{detail.site}</Text>
+            <Text style={styles.value}>{target.site}</Text>
           </View>
         </View>
 
         <View style={styles.field}>
           <Text style={styles.label}>Page</Text>
           <View style={styles.box}>
-            <Text style={styles.value}>{detail.page}</Text>
+            <Text style={styles.value}>{target.page}</Text>
           </View>
         </View>
+
+        {target.excerpt && (
+          <View style={styles.field}>
+            <Text style={styles.label}>Mention</Text>
+            <View style={[styles.box, styles.excerpt]}>
+              <Text style={styles.excerptText}>“{target.excerpt}”</Text>
+            </View>
+          </View>
+        )}
 
         <View style={styles.field}>
           <Text style={styles.label}>Reason</Text>
@@ -74,7 +96,7 @@ export function RequestRemovalScreen({ finding, onBack, onSend }: Props) {
           </Pressable>
           {choosingReason && (
             <View accessibilityRole="radiogroup" accessibilityLabel="Reason" style={styles.options}>
-              {removalReasons.map(option => (
+              {reasons.map(option => (
                 <Pressable
                   key={option.id}
                   accessibilityRole="radio"
@@ -125,6 +147,8 @@ const styles = StyleSheet.create({
   options: { overflow: 'hidden', borderWidth: 1, borderColor: theme.colors.border, borderRadius: 12, backgroundColor: theme.colors.surface },
   option: { minHeight: 44, justifyContent: 'center', paddingHorizontal: theme.space.lg },
   selected: { color: theme.colors.primary, fontWeight: '600' },
+  excerpt: { paddingVertical: theme.space.md, backgroundColor: theme.colors.disabledFill, borderWidth: 0 },
+  excerptText: { color: theme.colors.ink600, fontSize: 15, fontStyle: 'italic', lineHeight: 22 },
   message: {
     minHeight: 120,
     marginTop: theme.space.xs,

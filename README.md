@@ -321,7 +321,9 @@ handled in app state for the session.
   changes.
 - **Request removal** (**Footprint - 12**, `76:1310`): site and page are filled
   from the listing. Choosing a reason swaps in its message template unless the
-  message has been edited.
+  message has been edited. Ask for removal on a mention opens the same form with
+  the hosting site, the mention's text, and mention-specific reasons and
+  messages.
 - **Results after an action** (**Footprint - 9**, `76:1144`; **Footprint - 13**,
   `93:1342`): the item leaves the list, counts update ("7 things worth a look ·
   2 resolved"), and a notice offers Undo until the next item is opened. Handled
