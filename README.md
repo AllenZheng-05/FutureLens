@@ -96,16 +96,22 @@ the device's system font in place of Inter, which has not been bundled.
 - Choose a platform and an audience; selected chips update immediately.
 - Load either fictional sample to populate the draft and its sharing choices.
 - Clear the draft with the Clear action.
-- Check with Lens opens an explicit preview notice, not generated analysis.
+- Check with Lens opens "How this could be read": reader cards (Employers,
+  Classmates, No Context, Close Friends) with the selected reader's take shown
+  inline, the dashed draft preview, Post anyway, and Fix this post.
+- Fix this post opens a sheet: Rewrite it, Add context, or Share somewhere more
+  private (moves the post to Friends and goes to Ready to share).
+- Choosing a rewrite or context option leads to Ready to share, which offers
+  Done (back to the composer with the settled post) and Copy post.
 - Switch between Check, My Lens, and Footprint using the bottom tabs.
 - Drafts and choices survive tab changes. They live only in component state and
   reset when the app restarts; they are not saved or uploaded.
 
 `CheckPostScreen` accepts `onCheck(request: CheckPostRequest)`. The callback
 receives `{ draft, platform, audience }`, with surrounding draft whitespace
-trimmed. Replace `previewCheck` in `App.tsx` with the teammate-owned analysis and
-results flow; the screen does not implement either. It also accepts `onTabPress`
-and `availableTabs` for the app's navigation.
+trimmed, plus an optional `initialRequest` seed used when Ready to share's Done
+returns to the composer. It also accepts `onTabPress` and `availableTabs` for the
+app's navigation.
 
 The screen uses safe-area insets, a scrolling content area, touch targets of at
 least 44 points, and keyboard avoidance on iOS. The tab bar hides while the
@@ -397,10 +403,12 @@ summary, confirmation and saved Lens), each committed manually. The Footprint
 cleanup flow (Footprint - 6 to 14) was built the same way on the `Footprint`
 branch. Real social integrations and analysis remain open.
 
-Task 1's analysis, interpretation/results generation, and feature integration
-belong to the teammate. `previewCheck` remains a placeholder wired through
-`CheckPostScreen.onCheck`. Do not implement that functionality during these UI
-checkpoints.
+Task 1's demo analysis is preset, not generated: `App.tsx` stores the checked
+draft and walks the Check - 5 to Check - 7 frames (`CheckReadingScreen`,
+`ChooseFixScreen`, `ReadyToShareScreen`) with results from
+`src/data/postCheckResults.ts`, matched by draft text (the sample drafts have
+dedicated readers, rewrites and contexts; anything else gets a generic set). Real
+analysis remains open.
 
 ### Verification
 
