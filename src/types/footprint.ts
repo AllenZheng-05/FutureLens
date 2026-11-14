@@ -42,6 +42,16 @@ export type ListingFindingDetail = {
 
 export type FindingDetail = PostFindingDetail | ListingFindingDetail;
 
+// Choices on the action sheet (Figma: Footprint - 7 and 11).
+export type FindingAction = 'edit' | 'private' | 'delete' | 'keep' | 'untag' | 'ask-removal' | 'ignore' | 'request-removal';
+
+export type FindingActionOption = {
+  id: FindingAction;
+  label: string;
+  description: string;
+  destructive?: boolean;
+};
+
 export type DemoFootprintFinding = {
   id: string;
   title: string;

@@ -3,6 +3,7 @@ import { Alert, BackHandler, Keyboard, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 import type { Tab } from './src/components/BottomTabs';
+import { FindingActionSheet } from './src/components/FindingActionSheet';
 import { ScanConfirmationSheet } from './src/components/ScanConfirmationSheet';
 import { AccountSelectionScreen } from './src/screens/AccountSelectionScreen';
 import { CheckPostScreen } from './src/screens/CheckPostScreen';
@@ -23,7 +24,7 @@ import { demoFootprintFindings } from './src/data/demoFootprintFindings';
 import { describeLensFocus, goalOptions } from './src/data/goalOptions';
 import { defaultSharingRules, perspectiveOptions, topicOptions } from './src/data/lensOptions';
 import type { CheckPostRequest } from './src/types/checkPost';
-import type { DemoAccountId, DemoScanRequest } from './src/types/footprint';
+import type { DemoAccountId, DemoScanRequest, FindingAction } from './src/types/footprint';
 import type { GoalId, LensOption, PerspectiveId, SavedLens, SharingRules, TopicId } from './src/types/lens';
 
 type LensPage = 'intro' | 'goals' | 'perspectives' | 'topics' | 'sharing' | 'summary' | 'set';
@@ -81,6 +82,7 @@ export default function App() {
   const [savedLens, setSavedLens] = useState<SavedLens | null>(null);
   const [footprintPage, setFootprintPage] = useState<FootprintPage>('intro');
   const [selectedFindingId, setSelectedFindingId] = useState<string | null>(null);
+  const [showActionSheet, setShowActionSheet] = useState(false);
   const [scanAccountIds, setScanAccountIds] = useState<readonly DemoAccountId[]>([]);
   const [showScanConfirmation, setShowScanConfirmation] = useState(false);
   const showingFootprint = activeTab === 'Footprint' && footprintPage === 'intro';
@@ -101,6 +103,7 @@ export default function App() {
     if (!availableTabs.includes(tab)) return;
     Keyboard.dismiss();
     setShowScanConfirmation(false);
+    setShowActionSheet(false);
     if (tab === 'Footprint' && !footprintReviewPages.includes(footprintPage)) setFootprintPage('intro');
     setActiveTab(tab);
   }
@@ -121,6 +124,11 @@ export default function App() {
   function openFinding(findingId: string) {
     setSelectedFindingId(findingId);
     setFootprintPage('detail');
+  }
+
+  function chooseFindingAction(_action: FindingAction) {
+    // Each action is applied in the following steps; for now the sheet only closes.
+    setShowActionSheet(false);
   }
 
   // After a step: go on to the next one, or back to the summary when editing.
@@ -207,6 +215,8 @@ export default function App() {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       if (showScanConfirmation) {
         setShowScanConfirmation(false);
+      } else if (showActionSheet) {
+        setShowActionSheet(false);
       } else if (activeTab === 'My Lens' && lensPage !== 'intro') {
         lensBack();
       } else if (activeTab === 'Footprint' && footprintPage === 'detail') {
@@ -221,7 +231,7 @@ export default function App() {
       return true;
     });
     return () => subscription.remove();
-  }, [activeTab, lensPage, editingLens, savedLens, footprintPage, showScanConfirmation]);
+  }, [activeTab, lensPage, editingLens, savedLens, footprintPage, showScanConfirmation, showActionSheet]);
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
@@ -271,8 +281,8 @@ export default function App() {
           <FindingDetailScreen
             finding={selectedFinding}
             onBack={() => setFootprintPage('results')}
-            // Wired to the action sheet and resolutions in the next steps.
-            onChooseAction={() => {}}
+            onChooseAction={() => setShowActionSheet(true)}
+            // Wired to resolutions in the next step.
             onKeep={() => {}}
           />
         </View>
@@ -408,6 +418,12 @@ export default function App() {
         accountIds={scanAccountIds}
         onCancel={() => setShowScanConfirmation(false)}
         onAllow={startDemoScan}
+      />
+      <FindingActionSheet
+        visible={showActionSheet && showingFindingDetail}
+        finding={selectedFinding}
+        onSelect={chooseFindingAction}
+        onCancel={() => setShowActionSheet(false)}
       />
     </SafeAreaProvider>
   );
