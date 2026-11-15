@@ -1,4 +1,6 @@
+import { findingMatchesGoals } from './footprintGoals';
 import type { DemoFootprintFinding, FindingCategory, Resolution } from '../types/footprint';
+import type { GoalId } from '../types/lens';
 
 export type FootprintProgress = {
   before: number;
@@ -31,13 +33,14 @@ const resolvedLabels: Partial<Record<Resolution, string>> = {
 
 const categoryOrder: readonly FindingCategory[] = ['directories', 'posts', 'tagged', 'mentions'];
 
-// Figma: Footprint - 14 (93:1439). Counts the findings that match the demo goals, the
+// Figma: Footprint - 14 (93:1439). Counts the findings that match the active goals, the
 // same set as the default results view, so "Now" always equals "things worth a look".
 export function summarizeFootprintProgress(
   findings: readonly DemoFootprintFinding[],
   resolutions: Readonly<Record<string, Resolution>>,
+  goalIds: readonly GoalId[],
 ): FootprintProgress {
-  const scope = findings.filter(finding => finding.matchesDemoGoals);
+  const scope = findings.filter(finding => findingMatchesGoals(finding, goalIds));
   const lines = categoryOrder.flatMap(category => {
     const inCategory = scope.filter(finding => finding.category === category);
     if (inCategory.length === 0) return [];

@@ -5,11 +5,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackHeader } from '../components/BackHeader';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { TextButton } from '../components/TextButton';
+import { activeFootprintGoalIds, matchedGoalLabel } from '../data/footprintGoals';
 import { theme } from '../theme';
 import type { DemoFootprintFinding, ListingFindingDetail, PostFindingDetail } from '../types/footprint';
+import type { GoalId } from '../types/lens';
 
 type Props = {
   finding: DemoFootprintFinding | undefined;
+  // Saved Lens goals; null (no Lens) falls back to the preset demo goals.
+  lensGoalIds: readonly GoalId[] | null;
   onBack: () => void;
   onChooseAction: () => void;
   onKeep: () => void;
@@ -53,10 +57,11 @@ function ListingCard({ detail }: { detail: ListingFindingDetail }) {
 }
 
 // Figma: Footprint - 6 (76:1020) for posts, tags and mentions; Footprint - 10 (76:1262) for listings.
-export function FindingDetailScreen({ finding, onBack, onChooseAction, onKeep }: Props) {
+export function FindingDetailScreen({ finding, lensGoalIds, onBack, onChooseAction, onKeep }: Props) {
   const insets = useSafeAreaInsets();
   if (!finding) return null;
   const { detail } = finding;
+  const goalLabel = matchedGoalLabel(finding, activeFootprintGoalIds(lensGoalIds));
 
   return (
     <View style={styles.screen}>
@@ -82,9 +87,9 @@ export function FindingDetailScreen({ finding, onBack, onChooseAction, onKeep }:
           <Text style={styles.body}>{detail.whereFound}</Text>
         </Section>
 
-        {detail.goal && (
+        {goalLabel && (
           <View style={styles.goalChip}>
-            <Text style={styles.goalChipLabel}>Matches your goal: {detail.goal}</Text>
+            <Text style={styles.goalChipLabel}>Matches your goal: {goalLabel}</Text>
           </View>
         )}
       </ScrollView>

@@ -12,7 +12,7 @@ export const findingFilters: readonly { id: FindingFilter; label: string }[] = [
 export const demoScannedSites = 3;
 
 // The first nine reproduce the screenshot's 3 High / 4 Medium / 2 Low summary.
-// Three additional examples make the preset goal-match toggle meaningful.
+// Three additional examples only match other goals, so the goal-match toggle is meaningful.
 // Details for system-post and directory-listing follow Figma (Footprint - 6 and 10).
 export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
   {
@@ -22,7 +22,7 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
     reason: 'Could be read as a call for violence',
     category: 'posts',
     risk: 'high',
-    matchesDemoGoals: true,
+    goalIds: ['public-office'],
     detail: {
       kind: 'post',
       text: 'someone should burn the whole system down',
@@ -31,7 +31,6 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
       whyFlagged: 'Could be read as a call for violence.',
       quote: 'Candidate once said ‘burn the system down’',
       whereFound: 'Your public profile · Search results for your name',
-      goal: 'Run for office',
     },
   },
   {
@@ -41,7 +40,7 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
     reason: 'Name-calling a classmate in public replies',
     category: 'posts',
     risk: 'high',
-    matchesDemoGoals: true,
+    goalIds: ['public-office'],
     detail: {
       kind: 'post',
       text: 'honestly you’re the most clueless person in our whole class, nobody listens to you',
@@ -50,7 +49,6 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
       whyFlagged: 'Reads as bullying a classmate by name, without the rest of the thread.',
       quote: 'Student leader called a classmate ‘clueless’',
       whereFound: 'Replies on your public profile',
-      goal: 'Run for office',
     },
   },
   {
@@ -60,7 +58,7 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
     reason: 'Anyone who searches your name sees it',
     category: 'directories',
     risk: 'high',
-    matchesDemoGoals: true,
+    goalIds: ['public-office'],
     detail: {
       kind: 'listing',
       site: 'PeopleFinder',
@@ -72,7 +70,6 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
       ],
       whyFlagged: 'Shows your city and age to anyone who searches your name.',
       whereFound: 'Search results for your name.',
-      goal: 'Run for office',
     },
   },
   {
@@ -82,7 +79,7 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
     reason: 'Drinking photo with your name on it',
     category: 'tagged',
     risk: 'medium',
-    matchesDemoGoals: true,
+    goalIds: ['career'],
     detail: {
       kind: 'post',
       text: 'last night got out of hand 😂 @jordan.j',
@@ -91,7 +88,6 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
       whyFlagged: 'Shows you at a party with drinks, tagged by name.',
       quote: 'Photos show candidate partying in college',
       whereFound: 'Your tagged photos · @sam.k’s profile',
-      goal: 'Land an internship or job',
     },
   },
   {
@@ -101,7 +97,7 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
     reason: 'Heated political comment under your name',
     category: 'mentions',
     risk: 'medium',
-    matchesDemoGoals: true,
+    goalIds: ['public-office'],
     detail: {
       kind: 'post',
       text: 'anyone who votes for this budget is an idiot',
@@ -110,7 +106,6 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
       whyFlagged: 'Insults voters on a political issue.',
       quote: 'Candidate called voters ‘idiots’',
       whereFound: 'Comments on a local news article',
-      goal: 'Run for office',
       removal: { site: 'Metro Daily', page: 'metrodaily.example/city-budget-vote#comments' },
     },
   },
@@ -121,7 +116,7 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
     reason: 'Complains about a former manager',
     category: 'posts',
     risk: 'medium',
-    matchesDemoGoals: true,
+    goalIds: ['career'],
     detail: {
       kind: 'post',
       text: 'my manager at the coffee shop is the worst, counting down the minutes till I quit',
@@ -129,7 +124,6 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
       visibility: 'Public',
       whyFlagged: 'An employer could read this as how you talk about a team.',
       whereFound: 'Your public profile',
-      goal: 'Land an internship or job',
     },
   },
   {
@@ -139,7 +133,7 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
     reason: 'Shows where you used to live',
     category: 'tagged',
     risk: 'medium',
-    matchesDemoGoals: true,
+    goalIds: ['public-office'],
     detail: {
       kind: 'post',
       text: 'roommates reunion 🏠 at Maple St Apartments',
@@ -156,7 +150,7 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
     reason: 'An opinion you have since changed',
     category: 'posts',
     risk: 'low',
-    matchesDemoGoals: true,
+    goalIds: ['public-office'],
     detail: {
       kind: 'post',
       text: 'student government is a waste of time, nothing ever changes',
@@ -165,7 +159,6 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
       whyFlagged: 'Contradicts your current role in student government.',
       quote: 'Student leader once called student government ‘a waste of time’',
       whereFound: 'Your public profile',
-      goal: 'Run for office',
     },
   },
   {
@@ -175,7 +168,7 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
     reason: 'Positive, but links your name to your school',
     category: 'mentions',
     risk: 'low',
-    matchesDemoGoals: true,
+    goalIds: ['public-office'],
     detail: {
       kind: 'post',
       text: 'Thanks to Jordan J. from the university for helping run the food drive!',
@@ -193,7 +186,7 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
     reason: 'Your phone number is public',
     category: 'posts',
     risk: 'high',
-    matchesDemoGoals: false,
+    goalIds: ['education'],
     detail: {
       kind: 'post',
       text: 'selling my old textbooks, text me at 214-555-0142',
@@ -210,7 +203,7 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
     reason: 'Lists your email address',
     category: 'directories',
     risk: 'medium',
-    matchesDemoGoals: false,
+    goalIds: ['creator'],
     detail: {
       kind: 'listing',
       site: 'HobbyHub',
@@ -231,7 +224,7 @@ export const demoFootprintFindings: readonly DemoFootprintFinding[] = [
     reason: 'Casual photo, nothing sensitive',
     category: 'tagged',
     risk: 'low',
-    matchesDemoGoals: false,
+    goalIds: ['creator'],
     detail: {
       kind: 'post',
       text: 'board game night with the crew 🎲',

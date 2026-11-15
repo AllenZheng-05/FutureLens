@@ -479,6 +479,7 @@ export default function App() {
             findings={demoFootprintFindings}
             resolutions={resolutions}
             notice={resolutionNotice}
+            lensGoalIds={savedLens?.goalIds ?? null}
             availableTabs={availableTabs}
             onTabPress={changeTab}
             onChooseAccounts={leaveResultsForAccounts}
@@ -488,6 +489,7 @@ export default function App() {
               setResolutionNotice(null);
               setFootprintPage('progress');
             }}
+            onSetUpLens={() => changeTab('My Lens')}
           />
         </View>
         <View
@@ -497,6 +499,7 @@ export default function App() {
         >
           <FindingDetailScreen
             finding={selectedFinding}
+            lensGoalIds={savedLens?.goalIds ?? null}
             onBack={() => setFootprintPage('results')}
             onChooseAction={() => setShowActionSheet(true)}
             onKeep={() => resolveSelectedFinding('kept')}
@@ -536,6 +539,7 @@ export default function App() {
           <FootprintProgressScreen
             findings={demoFootprintFindings}
             resolutions={resolutions}
+            lensGoalIds={savedLens?.goalIds ?? null}
             onBack={() => setFootprintPage('results')}
             onDone={() => setFootprintPage('results')}
             onBackToCheck={() => {
