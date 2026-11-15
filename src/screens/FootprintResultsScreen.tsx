@@ -5,51 +5,84 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomTabs } from '../components/BottomTabs';
 import type { Tab } from '../components/BottomTabs';
 import { RiskBadge } from '../components/RiskBadge';
+import { TextButton } from '../components/TextButton';
 import { Toggle } from '../components/Toggle';
 import { demoScannedSites, findingFilters } from '../data/demoFootprintFindings';
+import { activeFootprintGoalIds, findingMatchesGoals, groupFindingsByPriority } from '../data/footprintGoals';
 import { demoScan } from '../data/demoScan';
 import { resolutionLabels } from '../data/findingActions';
 import { theme } from '../theme';
 import type { DemoFootprintFinding, FindingFilter, FindingRisk, Resolution, ResolutionNotice } from '../types/footprint';
+import type { GoalId } from '../types/lens';
 
 type Props = {
   findings: readonly DemoFootprintFinding[];
   resolutions: Readonly<Record<string, Resolution>>;
   notice: ResolutionNotice | null;
+  // Saved Lens goals; null means no Lens yet, so matches use the preset demo goals.
+  lensGoalIds: readonly GoalId[] | null;
   availableTabs: readonly Tab[];
   onTabPress: (tab: Tab) => void;
   onChooseAccounts: () => void;
   onOpenFinding: (findingId: string) => void;
   onUndo: () => void;
   onShowProgress: () => void;
+  onSetUpLens: () => void;
 };
 
 const risks: readonly FindingRisk[] = ['high', 'medium', 'low'];
 
+function FindingCard({ finding, onPress }: { finding: DemoFootprintFinding; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${finding.title}. ${finding.reason}. ${finding.source}. ${finding.risk} risk`}
+      accessibilityHint="Opens this item for review"
+      onPress={onPress}
+      style={({ pressed }) => [styles.finding, pressed && styles.pressed]}
+    >
+      <View accessible={false} style={styles.avatar} />
+      <View style={styles.findingText}>
+        <Text numberOfLines={1} style={styles.findingTitle}>{finding.title}</Text>
+        <Text numberOfLines={2} style={styles.findingReason}>{finding.reason}</Text>
+        <Text style={styles.findingSource}>{finding.source}</Text>
+      </View>
+      <RiskBadge risk={finding.risk} compact />
+    </Pressable>
+  );
+}
+
 // Footprint - 5: user-provided screenshot plus previously retrieved Figma geometry.
 // Footprint - 9 and 13: resolved items leave the list, with Undo and a Resolved section.
-// All filtering is over static fixtures; there is no analysis or personalization.
+// Open items are grouped by risk (Fix first, Worth a look, Low priority) to cut clutter.
+// Goal matching compares saved Lens goals with static fixture tags; there is no analysis.
 export function FootprintResultsScreen({
   findings,
   resolutions,
   notice,
+  lensGoalIds,
   availableTabs,
   onTabPress,
   onChooseAccounts,
   onOpenFinding,
   onUndo,
   onShowProgress,
+  onSetUpLens,
 }: Props) {
   const insets = useSafeAreaInsets();
   const [category, setCategory] = useState<FindingFilter>('all');
   const [matchesGoalsOnly, setMatchesGoalsOnly] = useState(true);
   const [showResolved, setShowResolved] = useState(false);
+  const [showLowPriority, setShowLowPriority] = useState(false);
+  const usingPresetGoals = !lensGoalIds || lensGoalIds.length === 0;
+  const goalIds = activeFootprintGoalIds(lensGoalIds);
   const filteredFindings = findings.filter(finding =>
-    (!matchesGoalsOnly || finding.matchesDemoGoals)
+    (!matchesGoalsOnly || findingMatchesGoals(finding, goalIds))
     && (category === 'all' || finding.category === category),
   );
   const visibleFindings = filteredFindings.filter(finding => !resolutions[finding.id]);
   const resolvedFindings = filteredFindings.filter(finding => resolutions[finding.id]);
+  const groups = groupFindingsByPriority(visibleFindings);
 
   return (
     <View style={styles.screen}>
@@ -110,30 +143,58 @@ export function FootprintResultsScreen({
           ))}
         </View>
 
+        {usingPresetGoals && (
+          <View style={styles.lensPrompt}>
+            <Text style={styles.lensPromptText}>Set up My Lens so these match your goals.</Text>
+            <TextButton label="Set up My Lens" compact onPress={onSetUpLens} style={styles.lensPromptButton} />
+          </View>
+        )}
+
         <View style={styles.goalRow}>
           <Text style={styles.goalLabel}>Matches my goals</Text>
           <Toggle label="Matches my goals" checked={matchesGoalsOnly} onChange={setMatchesGoalsOnly} />
         </View>
 
         <View style={styles.findings}>
-          {visibleFindings.map(finding => (
-            <Pressable
-              key={finding.id}
-              accessibilityRole="button"
-              accessibilityLabel={`${finding.title}. ${finding.reason}. ${finding.source}. ${finding.risk} risk`}
-              accessibilityHint="Opens this item for review"
-              onPress={() => onOpenFinding(finding.id)}
-              style={({ pressed }) => [styles.finding, pressed && styles.pressed]}
-            >
-              <View accessible={false} style={styles.avatar} />
-              <View style={styles.findingText}>
-                <Text numberOfLines={1} style={styles.findingTitle}>{finding.title}</Text>
-                <Text numberOfLines={2} style={styles.findingReason}>{finding.reason}</Text>
-                <Text style={styles.findingSource}>{finding.source}</Text>
+          {groups.map(group => {
+            const count = group.findings.length;
+            const countLabel = `${count} ${count === 1 ? 'item' : 'items'}`;
+            // Low priority starts collapsed so the urgent items lead the list.
+            const collapsible = group.risk === 'low';
+            const expanded = !collapsible || showLowPriority;
+            return (
+              <View key={group.risk} style={styles.group}>
+                {collapsible ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ expanded }}
+                    accessibilityLabel={`${group.title}, ${countLabel}`}
+                    onPress={() => setShowLowPriority(shown => !shown)}
+                    style={({ pressed }) => [styles.groupHeader, pressed && styles.pressed]}
+                  >
+                    <Text style={styles.groupTitle}>
+                      {group.title} <Text style={styles.groupCount}>({count})</Text>
+                    </Text>
+                    <Text accessible={false} style={styles.chevron}>{expanded ? '⌃' : '⌄'}</Text>
+                  </Pressable>
+                ) : (
+                  <View
+                    accessible
+                    accessibilityRole="header"
+                    accessibilityLabel={`${group.title}, ${countLabel}`}
+                    style={styles.groupHeader}
+                  >
+                    <Text style={styles.groupTitle}>
+                      {group.title} <Text style={styles.groupCount}>({count})</Text>
+                    </Text>
+                  </View>
+                )}
+                {expanded && group.findings.map(finding => (
+                  <FindingCard key={finding.id} finding={finding} onPress={() => onOpenFinding(finding.id)} />
+                ))}
               </View>
-              <RiskBadge risk={finding.risk} compact />
-            </Pressable>
-          ))}
+            );
+          })}
           {visibleFindings.length === 0 && (
             <Text accessibilityLiveRegion="polite" style={styles.empty}>
               {resolvedFindings.length > 0 ? 'Nothing left to review here.' : 'No sample findings match these filters.'}
@@ -162,7 +223,9 @@ export function FootprintResultsScreen({
           </View>
         )}
 
-        <Text style={styles.demoNote}>Sample findings only. Goal matches are preset.</Text>
+        <Text style={styles.demoNote}>
+          Sample findings only. {usingPresetGoals ? 'Goal matches use sample goals.' : 'Goal matches use your saved Lens.'}
+        </Text>
         <Pressable accessibilityRole="button" onPress={onChooseAccounts} style={styles.chooseAccounts}>
           <Text style={styles.chooseAccountsLabel}>Choose demo accounts again</Text>
         </Pressable>
@@ -205,7 +268,14 @@ const styles = StyleSheet.create({
   selectedChipLabel: { color: theme.colors.surface },
   goalRow: { minHeight: 48, marginTop: 6, flexDirection: 'row', alignItems: 'center', gap: theme.space.md, paddingHorizontal: theme.space.lg, paddingVertical: 1, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.accountBorder, borderRadius: theme.radius.card },
   goalLabel: { flex: 1, color: theme.colors.ink, fontSize: 15, fontWeight: '600', lineHeight: 20 },
-  findings: { marginTop: theme.space.xs, gap: theme.space.sm },
+  lensPrompt: { marginTop: 6, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: theme.space.sm, paddingHorizontal: theme.space.lg, paddingVertical: theme.space.xs, borderRadius: theme.radius.card, backgroundColor: theme.colors.chipFill },
+  lensPromptText: { flexShrink: 1, color: theme.colors.ink, fontSize: 13, lineHeight: 18 },
+  lensPromptButton: { minHeight: 44 },
+  findings: { marginTop: theme.space.xs, gap: theme.space.md },
+  group: { gap: theme.space.sm },
+  groupHeader: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  groupTitle: { color: theme.colors.ink, fontSize: 15, fontWeight: '600', lineHeight: 20 },
+  groupCount: { color: theme.colors.muted, fontWeight: '400' },
   finding: { minHeight: 72, flexDirection: 'row', alignItems: 'center', gap: theme.space.md, paddingHorizontal: theme.space.lg, paddingVertical: 15, borderWidth: 1, borderColor: theme.colors.accountBorder, borderRadius: theme.radius.card, backgroundColor: theme.colors.surface },
   avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: theme.colors.avatarFill },
   findingText: { flex: 1, minWidth: 0, gap: 2 },

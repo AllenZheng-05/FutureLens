@@ -6,23 +6,27 @@ import { BackHeader } from '../components/BackHeader';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { TextButton } from '../components/TextButton';
 import { Toggle } from '../components/Toggle';
+import { activeFootprintGoalIds } from '../data/footprintGoals';
 import { summarizeFootprintProgress } from '../data/footprintProgress';
 import { theme } from '../theme';
 import type { DemoFootprintFinding, Resolution } from '../types/footprint';
+import type { GoalId } from '../types/lens';
 
 type Props = {
   findings: readonly DemoFootprintFinding[];
   resolutions: Readonly<Record<string, Resolution>>;
+  // Saved Lens goals; null (no Lens) falls back to the preset demo goals.
+  lensGoalIds: readonly GoalId[] | null;
   onBack: () => void;
   onDone: () => void;
   onBackToCheck: () => void;
 };
 
 // Figma: Footprint - 14 (93:1439). Rescan monthly is a session-only preference; no scan is scheduled.
-export function FootprintProgressScreen({ findings, resolutions, onBack, onDone, onBackToCheck }: Props) {
+export function FootprintProgressScreen({ findings, resolutions, lensGoalIds, onBack, onDone, onBackToCheck }: Props) {
   const insets = useSafeAreaInsets();
   const [rescanMonthly, setRescanMonthly] = useState(true);
-  const progress = summarizeFootprintProgress(findings, resolutions);
+  const progress = summarizeFootprintProgress(findings, resolutions, activeFootprintGoalIds(lensGoalIds));
 
   return (
     <View style={styles.screen}>

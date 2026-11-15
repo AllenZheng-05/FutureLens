@@ -1,4 +1,6 @@
-export type DemoAccountId = 'public' | 'friends' | 'video' | 'photos' | 'career';
+import type { GoalId } from './lens';
+
+export type DemoAccountId ='public' | 'friends' | 'video' | 'photos' | 'career';
 
 export type DemoAccount = {
   id: DemoAccountId;
@@ -27,7 +29,6 @@ export type PostFindingDetail = {
   whyFlagged: string;
   quote?: string;
   whereFound: string;
-  goal?: string;
   // Set for mentions on other sites: where Ask for removal sends its request.
   removal?: { site: string; page: string };
 };
@@ -39,7 +40,6 @@ export type ListingFindingDetail = {
   fields: readonly { label: string; value: string }[];
   whyFlagged: string;
   whereFound: string;
-  goal?: string;
 };
 
 export type FindingDetail = PostFindingDetail | ListingFindingDetail;
@@ -67,6 +67,7 @@ export type DemoFootprintFinding = {
   reason: string;
   category: FindingCategory;
   risk: FindingRisk;
-  matchesDemoGoals: boolean;
+  // Lens goals this finding matters for; the Review item chip names the first active one.
+  goalIds: readonly GoalId[];
   detail: FindingDetail;
 };
