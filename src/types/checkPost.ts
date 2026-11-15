@@ -26,16 +26,20 @@ export type PostReader = {
   inLens?: boolean;
 };
 
-// A preset fix: a rewrite, or the draft with context added. Context options
-// carry the risk they leave the post at; rewrites don't show a badge.
+// A preset fix: a rewrite, or the draft with context added. Options carry the
+// risk the post is left at, and why explains the problem the option solves.
 export type FixOption = {
   id: string;
   text: string;
   risk?: CheckRisk;
+  why?: string;
 };
 
 // Which fix the user picked from the sheet.
 export type FixKind = 'rewrite' | 'context' | 'private';
+
+// Severity ordering, for comparing the original draft against a fix option.
+export const checkRiskRank: Record<CheckRisk, number> = { high: 2, medium: 1, low: 0 };
 
 // Preset demo analysis. Real analysis is owned by the check/results flow, not the UI.
 export type PostCheckResult = {

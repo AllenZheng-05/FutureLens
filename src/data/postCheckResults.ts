@@ -56,25 +56,43 @@ const resultsByDraft: readonly { draft: string; result: DraftResult }[] = [
         },
       ],
       rewrites: [
-        { id: 'rw-1', text: 'Can’t wait to win the debate at Thursday’s student government meeting 🖊️' },
-        { id: 'rw-2', text: 'Ready to challenge the board’s budget at Thursday’s meeting.' },
-        { id: 'rw-3', text: 'Thursday’s meeting is going to be intense, and I’m ready to make my case!' },
+        {
+          id: 'rw-1',
+          text: 'Can’t wait to win the debate at Thursday’s student government meeting 🖊️',
+          risk: 'low',
+          why: 'Swaps “take down” and the 💣 for “win the debate” — the two things strangers read as a threat. Every reader now sees the meeting is a debate.',
+        },
+        {
+          id: 'rw-2',
+          text: 'Ready to challenge the board’s budget at Thursday’s meeting.',
+          risk: 'low',
+          why: 'Says exactly what you’ll do at the meeting — challenge the budget — so nobody has to guess what “take down the board” meant.',
+        },
+        {
+          id: 'rw-3',
+          text: 'Thursday’s meeting is going to be intense, and I’m ready to make my case!',
+          risk: 'medium',
+          why: 'More energetic, but “intense” is still vague — a stranger could still wonder what’s happening. Pairs well with a smaller audience.',
+        },
       ],
       contexts: [
         {
           id: 'cx-1',
           text: 'Can’t wait to take down the board at Thursday’s meeting 💣 (debating the budget at student gov, to be clear!)',
           risk: 'low',
+          why: 'Keeps your joke and adds the one missing fact — what “the board” is — so out-of-context readers get it too.',
         },
         {
           id: 'cx-2',
           text: 'Can’t wait to take down the board at Thursday’s meeting 💣 #studentgov #debate',
           risk: 'low',
+          why: 'Two tags do the same work as a sentence: they mark the post as student government, not a threat.',
         },
         {
           id: 'cx-3',
           text: 'Can’t wait to take down the board at Thursday’s meeting 💣 (all in good fun!)',
           risk: 'medium',
+          why: 'Labels the tone, but “all in good fun” can read as a non-apology if the post already alarmed someone.',
         },
       ],
       lensReadings: {
@@ -136,25 +154,43 @@ const resultsByDraft: readonly { draft: string; result: DraftResult }[] = [
         },
       ],
       rewrites: [
-        { id: 'rw-1', text: 'Excited to share I’m joining a new team this summer — can’t wait to learn from everyone there!' },
-        { id: 'rw-2', text: 'Big news: I’ve accepted a new role starting this summer. Grateful for what’s next!' },
-        { id: 'rw-3', text: 'New role, new team, starting this summer. If you’ve worked with me, I’d love to hear your tips!' },
+        {
+          id: 'rw-1',
+          text: 'Excited to share I’m joining a new team this summer — can’t wait to learn from everyone there!',
+          risk: 'low',
+          why: 'Names the change — a new team — so coworkers hear news, not a goodbye.',
+        },
+        {
+          id: 'rw-2',
+          text: 'Big news: I’ve accepted a new role starting this summer. Grateful for what’s next!',
+          risk: 'low',
+          why: 'Says a role was accepted, closing the “what’s happening?” gap a vague post leaves open.',
+        },
+        {
+          id: 'rw-3',
+          text: 'New role, new team, starting this summer. If you’ve worked with me, I’d love to hear your tips!',
+          risk: 'medium',
+          why: 'Clear about the change, but asking for tips invites a busy thread your future colleagues could read first.',
+        },
       ],
       contexts: [
         {
           id: 'cx-1',
           text: 'Starting a new chapter this summer. Looking forward to learning from the team! (new role, same me — details soon!)',
           risk: 'low',
+          why: 'Keeps your words and answers the first question readers ask — what actually changed.',
         },
         {
           id: 'cx-2',
           text: 'Starting a new chapter this summer. Looking forward to learning from the team! I’ve accepted a new role and start this summer.',
           risk: 'low',
+          why: 'States the fact plainly, so the post stands on its own when it’s shared out of context.',
         },
         {
           id: 'cx-3',
           text: 'Starting a new chapter this summer. Looking forward to learning from the team! (What I can say: it’s a step I’ve wanted for a while.)',
           risk: 'medium',
+          why: 'Explains the feeling, not the fact — readers still don’t know what changed.',
         },
       ],
       lensReadings: {

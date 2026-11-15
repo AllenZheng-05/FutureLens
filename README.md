@@ -105,7 +105,12 @@ the device's system font in place of Inter, which has not been bundled.
   readings shift when the draft's topic is one the Lens watches, and a "Your
   Lens" note appears when the audience is wider than the Lens's sharing rule.
 - Fix this post opens a sheet: Rewrite it, Add context, or Share somewhere more
-  private (moves the post to Friends and goes to Ready to share).
+  private — each with a one-line description of what the fix does (the private
+  one explains the Lens rule when it applies). The private fix moves the post
+  to Friends and goes to Ready to share.
+- Rewrites and context options each show the risk the post is left at, and the
+  selected option explains "What this fixes". A selected option also shows an
+  Original → This version severity comparison above the confirm button.
 - Choosing a rewrite or context option leads to Ready to share, which offers
   Done (back to the composer with the settled post) and Copy post.
 - Switch between Check, My Lens, and Footprint using the bottom tabs.
@@ -137,8 +142,13 @@ With no Lens saved (fresh app, or never finishing My Lens setup):
 2. Point out: *Employers* and *No Context* show **High** dots. The page opens on
    the riskiest reader, and its reading appears inline under the cards — tap
    *Classmates* to show the same post reading as harmless to them.
-3. **Fix this post** → **Rewrite it** → pick *"Can't wait to win the debate…"*
-   → **Use this Rewrite** → **Copy post** (Copied ✓) → **Done**.
+3. **Fix this post** → **Rewrite it**. Point out: every rewrite card shows the
+   risk it leaves, and the sheet's options each say what they do — rewrites
+   replace the post, context appends a clarifier. Pick *"Can't wait to win the
+   debate…"*: its card shows **What this fixes**, and an **Original: High →
+   This version: Low** comparison appears above the button. One rewrite stays
+   **Medium** on purpose — pick it to show that not every fix fully clears the
+   post. Then **Use this Rewrite** → **Copy post** (Copied ✓) → **Done**.
 4. Point out: Done returns to the composer with the rewrite in place — check
    again and the risk drops.
 

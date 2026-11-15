@@ -7,6 +7,7 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { RiskBadge } from '../components/RiskBadge';
 import { theme } from '../theme';
 import type { CheckPostRequest, FixKind, PostCheckResult } from '../types/checkPost';
+import { checkRiskRank } from '../types/checkPost';
 
 type Props = {
   request: CheckPostRequest;
@@ -20,7 +21,7 @@ type Props = {
   onChooseFix: (kind: FixKind) => void;
 };
 
-const riskRank = { high: 2, medium: 1, low: 0 } as const;
+const riskRank = checkRiskRank;
 
 // Figma: Check - 5. Reader cards with the selected reader's interpretation shown
 // inline (instead of Check - 5b1's popup), plus the dashed draft preview.
@@ -105,7 +106,11 @@ export function CheckReadingScreen({
         visible={showFixSheet}
         hasRewrites={result.rewrites.length > 0}
         hasContexts={result.contexts.length > 0}
-        privateHint={privateHint}
+        descriptions={{
+          rewrite: 'A fresh way to say it. Your post is replaced.',
+          context: 'Your post stays as written. A clarifying line is added at the end.',
+          private: privateHint ?? 'Same post, smaller audience.',
+        }}
         onSelect={(kind) => {
           setShowFixSheet(false);
           onChooseFix(kind);

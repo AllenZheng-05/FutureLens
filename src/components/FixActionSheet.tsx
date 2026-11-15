@@ -9,15 +9,16 @@ type Props = {
   // Presets exist for rewrite and context fixes only on the sample drafts.
   hasRewrites: boolean;
   hasContexts: boolean;
-  // When the Lens has a rule for this draft's topic, the private fix explains it.
-  privateHint?: string;
+  // One-line description per fix, shown under its label. The private one
+  // explains the Lens rule when one applies.
+  descriptions?: Partial<Record<FixKind, string>>;
   onSelect: (kind: FixKind) => void;
   onCancel: () => void;
 };
 
 // Figma: Check - 5c. The sheet over the reading page with the three fix paths.
 export function FixActionSheet({
-  visible, hasRewrites, hasContexts, privateHint, onSelect, onCancel,
+  visible, hasRewrites, hasContexts, descriptions, onSelect, onCancel,
 }: Props) {
   const insets = useSafeAreaInsets();
   if (!visible) return null;
@@ -69,8 +70,8 @@ export function FixActionSheet({
                 >
                   <View style={styles.optionText}>
                     <Text style={styles.optionLabel}>{option.label}</Text>
-                    {option.kind === 'private' && privateHint && (
-                      <Text style={styles.optionHint}>{privateHint}</Text>
+                    {descriptions?.[option.kind] && (
+                      <Text style={styles.optionHint}>{descriptions[option.kind]}</Text>
                     )}
                   </View>
                   <Text accessible={false} style={styles.chevron}>{'>'}</Text>

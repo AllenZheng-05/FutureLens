@@ -32,7 +32,8 @@ import { immediateResolutions, resolutionLabels } from './src/data/findingAction
 import { describeLensFocus, goalOptions } from './src/data/goalOptions';
 import { defaultSharingRules, perspectiveOptions, topicOptions } from './src/data/lensOptions';
 import { buildPostCheckResult } from './src/data/postCheckResults';
-import type { CheckPostRequest, FixKind, FixOption } from './src/types/checkPost';
+import type { CheckPostRequest, CheckRisk, FixKind, FixOption } from './src/types/checkPost';
+import { checkRiskRank } from './src/types/checkPost';
 import type { DemoAccountId, DemoScanRequest, FindingAction, Resolution, ResolutionNotice } from './src/types/footprint';
 import type { GoalId, LensOption, PerspectiveId, SavedLens, SharingRules, TopicId } from './src/types/lens';
 
@@ -128,6 +129,13 @@ export default function App() {
   // True when the private-share fix moved the post to a smaller audience.
   const audienceChanged = finalPost !== null && checkRequest !== null
     && finalPost.audience !== checkRequest.audience;
+  // The worst reader concern on the checked draft, for the fix comparison.
+  const originalRisk: CheckRisk = checkResult
+    ? checkResult.readers.reduce<CheckRisk>(
+        (worst, reader) => (checkRiskRank[reader.risk] > checkRiskRank[worst] ? reader.risk : worst),
+        'low',
+      )
+    : 'low';
 
   function changeTab(tab: Tab) {
     if (!availableTabs.includes(tab)) return;
@@ -415,6 +423,7 @@ export default function App() {
             <ChooseFixScreen
               mode="rewrite"
               options={checkResult.rewrites}
+              originalRisk={originalRisk}
               onBack={() => setCheckPage('reading')}
               onUse={useFixOption}
             />
@@ -429,6 +438,7 @@ export default function App() {
             <ChooseFixScreen
               mode="context"
               options={checkResult.contexts}
+              originalRisk={originalRisk}
               onBack={() => setCheckPage('reading')}
               onUse={useFixOption}
             />
