@@ -18,6 +18,7 @@ export function GoalSelectionScreen({ initialIds, backLabel = 'Back to My Lens',
       step={1}
       totalSteps={4}
       title={'What are you working\ntoward?'}
+      subtitle="Checks flag what could hurt these goals."
       options={goalOptions}
       initialIds={initialIds}
       backLabel={backLabel}

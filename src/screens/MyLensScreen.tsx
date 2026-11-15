@@ -108,6 +108,9 @@ export function MyLensScreen({ savedLens, onStartSetup, onEditLens, onTabPress, 
         <Text style={styles.description}>
           Your goals decide what gets flagged, so every check fits your future.
         </Text>
+        <Text style={styles.description}>
+          Your Lens changes what Check and Footprint flag.
+        </Text>
       </ScrollView>
 
       <View style={styles.introAction}>
