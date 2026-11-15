@@ -14,6 +14,8 @@ export type SharingRules = Record<LensAccount, Record<TopicId, SharingAudience>>
 export type LensOption<T extends string> = {
   id: T;
   label: string;
+  // Short plain-language hint shown under the label on setup cards.
+  description?: string;
 };
 
 export type GoalOption = LensOption<GoalId>;

@@ -2,11 +2,11 @@ import type { GoalId, GoalOption } from '../types/lens';
 
 // Fixed choices from the supplied Lens - 2 screenshot, not inferred user goals.
 export const goalOptions: readonly GoalOption[] = [
-  { id: 'public-office', label: 'Run for office someday' },
-  { id: 'career', label: 'Land an internship or job' },
-  { id: 'education', label: 'Get into a program or school' },
-  { id: 'creator', label: 'Build a creator brand' },
-  { id: 'other', label: 'Something else' },
+  { id: 'public-office', label: 'Run for office someday', description: 'Elected roles, campaigns or public service' },
+  { id: 'career', label: 'Land an internship or job', description: 'Applications, interviews and background checks' },
+  { id: 'education', label: 'Get into a program or school', description: 'College, grad school, scholarships or programs' },
+  { id: 'creator', label: 'Build a creator brand', description: 'Growing an audience, sponsors and partnerships' },
+  { id: 'other', label: 'Something else', description: 'Any other future you want to protect' },
 ];
 
 // How each goal reads in "Checks now focus on ...".

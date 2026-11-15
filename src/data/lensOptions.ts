@@ -2,21 +2,21 @@ import type { LensAccount, LensOption, PerspectiveId, SharingAudience, SharingRu
 
 // Fixed choices from the Lens setup Step 2 and Step 3 frames on the Figma board.
 export const perspectiveOptions: readonly LensOption<PerspectiveId>[] = [
-  { id: 'employers', label: 'Future employers' },
-  { id: 'voters-press', label: 'Voters & press' },
-  { id: 'admissions', label: 'Admissions officers' },
-  { id: 'strangers', label: 'Strangers with no context' },
-  { id: 'family', label: 'Family' },
-  { id: 'rivals', label: 'Old rivals' },
+  { id: 'employers', label: 'Future employers', description: 'Recruiters and managers screening applicants' },
+  { id: 'voters-press', label: 'Voters & press', description: 'Voters and reporters looking into your past' },
+  { id: 'admissions', label: 'Admissions officers', description: 'Schools and programs reviewing applications' },
+  { id: 'strangers', label: 'Strangers with no context', description: 'People who see one post without knowing you' },
+  { id: 'family', label: 'Family', description: 'Parents, relatives and others close to home' },
+  { id: 'rivals', label: 'Old rivals', description: 'People who might use old posts against you' },
 ];
 
 export const topicOptions: readonly LensOption<TopicId>[] = [
-  { id: 'politics', label: 'Politics' },
-  { id: 'jokes', label: 'Jokes & sarcasm' },
-  { id: 'partying', label: 'Partying' },
-  { id: 'rants', label: 'Rants about people' },
-  { id: 'location', label: 'Location' },
-  { id: 'opinions', label: 'Opinions I may change' },
+  { id: 'politics', label: 'Politics', description: 'Elections, candidates, policies and protests' },
+  { id: 'jokes', label: 'Jokes & sarcasm', description: 'Humor that could read as serious out of context' },
+  { id: 'partying', label: 'Partying', description: 'Drinking, nightlife and party photos' },
+  { id: 'rants', label: 'Rants about people', description: 'Complaints that name or point at someone' },
+  { id: 'location', label: 'Location', description: 'Places you live, work or visit often' },
+  { id: 'opinions', label: 'Opinions I may change', description: 'Strong takes you might not hold in a few years' },
 ];
 
 // Step 4 ("Who should see what?") choices.
