@@ -96,9 +96,13 @@ the device's system font in place of Inter, which has not been bundled.
 - Choose a platform and an audience; selected chips update immediately.
 - Load either fictional sample to populate the draft and its sharing choices.
 - Clear the draft with the Clear action.
-- Check with Lens opens "How this could be read": reader cards (Employers,
-  Classmates, No Context, Close Friends) with the selected reader's take shown
-  inline, the dashed draft preview, Post anyway, and Fix this post.
+- Check with Lens first shows "Reading your post from N points of view…"
+  (**Check - 4**) for about a second; Back cancels it. It then opens "How this
+  could be read": reader cards (Employers, Classmates, No Context, Close Friends)
+  with the selected reader's take shown inline, the dashed draft preview, Post
+  anyway, and Fix this post.
+- Post anyway asks "Post without changes?" (**Check - 5a**) when any reader
+  rates the draft Medium or High; Go back keeps the reading open.
 - With a Lens saved, results focus through it: reader cards matching chosen
   perspectives get an "In your Lens" tag and move to the front, extra
   perspective cards appear (Voters & press, Admissions officers, Old rivals),
@@ -235,6 +239,11 @@ header Back, and Android back.
 
 Behavior:
 
+- Each step starts with one line saying what it changes (for example, "Checks
+  read your posts through these people's eyes."), and every goal, perspective,
+  and topic card has a short description under its label. The introduction
+  notes that the Lens changes what Check and Footprint flag. These address the
+  DP3 issues that setup didn't explain its effect and topics were vague.
 - Steps 1–3 are multi-select: tap to select, tap again to deselect. Next stays
   disabled until something is selected. Checked states are exposed to
   accessibility tools.
@@ -376,11 +385,19 @@ goal-match toggle, sample finding cards, and Footprint tab state.
 
 - The default view shows nine findings: 3 High, 4 Medium, and 2 Low, matching the
   supplied screenshot. Turning off Matches my goals exposes three extra samples.
+- Open findings are grouped into Fix first (High), Worth a look (Medium), and Low
+  priority (collapsed by default). Within each group your own posts come first,
+  then listings, tags, and mentions (DP3 usability fixes for a dense list and
+  equal priority).
+- Matches my goals uses the saved Lens's goals. Each finding is tagged with the
+  goals it could affect (`goalIds`). With no Lens saved, it uses the sample goals
+  Run for office and Land an internship or job, and a prompt links to My Lens.
+  Review item's goal chip and Your footprint now use the same goals.
 - Category and goal-match filters combine, and the summary/counts reflect the
   visible sample rows. An empty state is available when no fixtures match.
 - Each card shows a one-line reason it was flagged, so users can triage without
   opening every item (a DP3 usability fix). Tapping a card opens Review item.
-- Goal matches and risk levels are fixed fixture labels. No model, post checker,
+- Risk levels and goal tags are fixed fixture labels. No model, post checker,
   or personalization algorithm runs.
 - Results and filter selections survive changing tabs. Choose demo accounts
   again and Android back both return to account selection.
@@ -450,8 +467,8 @@ Code layout:
 
 | Task | Planned interface | Status |
 | --- | --- | --- |
-| Check a post | Draft input, sharing choices, sample drafts | Input UI complete; analysis/results pending |
-| Set up My Lens | Introduction, four setup steps, summary with Edit, confirmation, saved Lens | Works end to end; not yet applied to Check results |
+| Check a post | Draft input, sharing choices, sample drafts, loading, readings, Post anyway confirmation, fixes, Ready to share | Works end to end on preset analysis |
+| Set up My Lens | Introduction, four setup steps with descriptions, summary with Edit, confirmation, saved Lens | Works end to end; applied to Check readings and Footprint goal matches |
 | Review digital footprint | Introduction, account selection, confirmation, demo scan, results, Review item, actions, Edit caption, Request removal, Undo, progress summary | Works end to end on demo data |
 
 Hardcoded content: `src/data/sampleDrafts.ts` contains two fictional draft
