@@ -5,8 +5,10 @@ import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-c
 import type { Tab } from './src/components/BottomTabs';
 import { DeleteConfirmDialog } from './src/components/DeleteConfirmDialog';
 import { FindingActionSheet } from './src/components/FindingActionSheet';
+import { PostAnywayDialog } from './src/components/PostAnywayDialog';
 import { ScanConfirmationSheet } from './src/components/ScanConfirmationSheet';
 import { AccountSelectionScreen } from './src/screens/AccountSelectionScreen';
+import { CheckLoadingScreen } from './src/screens/CheckLoadingScreen';
 import { CheckPostScreen } from './src/screens/CheckPostScreen';
 import { CheckReadingScreen } from './src/screens/CheckReadingScreen';
 import { ChooseFixScreen } from './src/screens/ChooseFixScreen';
@@ -68,7 +70,7 @@ type FootprintPage = 'intro' | 'accounts' | 'scan' | 'results' | 'detail' | 'edi
 // Pages reached after a scan. Returning to the Footprint tab keeps the user on these.
 const footprintReviewPages: readonly FootprintPage[] = ['results', 'detail', 'edit', 'removal', 'progress'];
 
-type CheckPage = 'composer' | 'reading' | 'rewrite' | 'context' | 'ready';
+type CheckPage = 'composer' | 'checking' | 'reading' | 'rewrite' | 'context' | 'ready';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('Check');
@@ -83,6 +85,8 @@ export default function App() {
   // Seed for a composer remount, e.g. when a rewrite from the results replaces the draft.
   const [composerSeed, setComposerSeed] = useState<CheckPostRequest | null>(null);
   const [composerKey, setComposerKey] = useState(0);
+  // Confirms Post anyway when some readers could misread the unchanged draft.
+  const [showPostAnywayConfirm, setShowPostAnywayConfirm] = useState(false);
   const [lensPage, setLensPage] = useState<LensPage>('intro');
   const [lensGoalIds, setLensGoalIds] = useState<readonly GoalId[]>([]);
   const [lensPerspectiveIds, setLensPerspectiveIds] = useState<readonly PerspectiveId[]>([]);
@@ -120,6 +124,7 @@ export default function App() {
   const showingSharing = activeTab === 'My Lens' && lensPage === 'sharing';
   const showingSummary = activeTab === 'My Lens' && lensPage === 'summary';
   const showingLensSet = activeTab === 'My Lens' && lensPage === 'set';
+  const showingCheckLoading = activeTab === 'Check' && checkPage === 'checking';
   const showingCheckReading = activeTab === 'Check' && checkPage === 'reading';
   const showingChooseRewrite = activeTab === 'Check' && checkPage === 'rewrite';
   const showingChooseContext = activeTab === 'Check' && checkPage === 'context';
@@ -136,6 +141,10 @@ export default function App() {
         'low',
       )
     : 'low';
+  // Readers rated medium or high, counted for the Post anyway confirmation.
+  const concernCount = checkResult
+    ? checkResult.readers.filter(reader => reader.risk !== 'low').length
+    : 0;
 
   function changeTab(tab: Tab) {
     if (!availableTabs.includes(tab)) return;
@@ -143,20 +152,31 @@ export default function App() {
     setShowScanConfirmation(false);
     setShowActionSheet(false);
     setShowDeleteConfirm(false);
+    setShowPostAnywayConfirm(false);
     if (tab === 'Footprint' && !footprintReviewPages.includes(footprintPage)) setFootprintPage('intro');
     setActiveTab(tab);
   }
 
-  // Runs the demo check: the reading page shows the preset analysis for this
-  // draft, focused through the Lens saved at this moment.
+  // Runs the demo check: a brief loading page, then the reading page shows the
+  // preset analysis for this draft, focused through the Lens saved at this moment.
   function runCheck(request: CheckPostRequest) {
     setCheckRequest(request);
     setCheckLens(savedLens);
     setFinalPost(null);
-    setCheckPage('reading');
+    setCheckPage('checking');
+  }
+
+  // Post anyway asks first when any reader could take the draft the wrong way.
+  function requestPostAnyway() {
+    if (concernCount > 0) {
+      setShowPostAnywayConfirm(true);
+    } else {
+      postAnyway();
+    }
   }
 
   function postAnyway() {
+    setShowPostAnywayConfirm(false);
     if (!checkRequest) return;
     setFinalPost({ ...checkRequest });
     setCheckPage('ready');
@@ -356,7 +376,9 @@ export default function App() {
         setShowActionSheet(false);
       } else if (showDeleteConfirm) {
         setShowDeleteConfirm(false);
-      } else if (activeTab === 'Check' && checkPage === 'reading') {
+      } else if (showPostAnywayConfirm) {
+        setShowPostAnywayConfirm(false);
+      } else if (activeTab === 'Check' && (checkPage === 'checking' || checkPage === 'reading')) {
         setCheckPage('composer');
       } else if (activeTab === 'Check' && (checkPage === 'rewrite' || checkPage === 'context')) {
         setCheckPage('reading');
@@ -378,7 +400,7 @@ export default function App() {
       return true;
     });
     return () => subscription.remove();
-  }, [activeTab, checkPage, lensPage, editingLens, savedLens, footprintPage, showScanConfirmation, showActionSheet, showDeleteConfirm]);
+  }, [activeTab, checkPage, lensPage, editingLens, savedLens, footprintPage, showScanConfirmation, showActionSheet, showDeleteConfirm, showPostAnywayConfirm]);
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
@@ -398,6 +420,18 @@ export default function App() {
           />
         </View>
         <View
+          style={[styles.page, !showingCheckLoading && styles.hidden]}
+          accessibilityElementsHidden={!showingCheckLoading}
+          importantForAccessibility={showingCheckLoading ? 'auto' : 'no-hide-descendants'}
+        >
+          <CheckLoadingScreen
+            active={showingCheckLoading}
+            readerCount={checkResult?.readers.length ?? 0}
+            onCancel={() => setCheckPage('composer')}
+            onDone={() => setCheckPage('reading')}
+          />
+        </View>
+        <View
           style={[styles.page, !showingCheckReading && styles.hidden]}
           accessibilityElementsHidden={!showingCheckReading}
           importantForAccessibility={showingCheckReading ? 'auto' : 'no-hide-descendants'}
@@ -409,7 +443,7 @@ export default function App() {
               lensNote={checkResult.lensNote}
               privateHint={checkResult.privateHint}
               onBack={() => setCheckPage('composer')}
-              onPostAnyway={postAnyway}
+              onPostAnyway={requestPostAnyway}
               onChooseFix={chooseCheckFix}
             />
           )}
@@ -684,6 +718,12 @@ export default function App() {
         finding={selectedFinding}
         onSelect={chooseFindingAction}
         onCancel={() => setShowActionSheet(false)}
+      />
+      <PostAnywayDialog
+        visible={showPostAnywayConfirm && showingCheckReading}
+        concernCount={concernCount}
+        onCancel={() => setShowPostAnywayConfirm(false)}
+        onPostAnyway={postAnyway}
       />
       <DeleteConfirmDialog
         visible={showDeleteConfirm && showingFindingDetail}
