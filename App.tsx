@@ -581,6 +581,7 @@ export default function App() {
             step={2}
             totalSteps={4}
             title="Whose eyes worry you most?"
+            subtitle="Checks read your posts through these people’s eyes."
             options={perspectiveOptions}
             initialIds={lensPerspectiveIds}
             backLabel={editingLens ? 'Cancel and return to Your Lens' : 'Back to goals'}
@@ -600,6 +601,7 @@ export default function App() {
             step={3}
             totalSteps={4}
             title="What should Lens watch for?"
+            subtitle="Lens flags posts about these topics."
             options={topicOptions}
             initialIds={lensTopicIds}
             backLabel={editingLens ? 'Cancel and return to Your Lens' : 'Back to perspectives'}

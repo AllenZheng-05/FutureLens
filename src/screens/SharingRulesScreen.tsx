@@ -49,7 +49,7 @@ export function SharingRulesScreen({
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.introduction}>
           <Text accessibilityRole="header" style={styles.title}>Who should see what?</Text>
-          <Text style={styles.subtitle}>Choose an audience for each topic on each account.</Text>
+          <Text style={styles.subtitle}>Who should see each topic?</Text>
         </View>
 
         <View style={styles.accountSwitch}>

@@ -5,16 +5,17 @@ import { CheckMark } from './CheckMark';
 
 type Props = {
   label: string;
+  description?: string;
   selected: boolean;
   onPress: () => void;
 };
 
 // Multi-select card used by the Lens setup steps.
-export function OptionCard({ label, selected, onPress }: Props) {
+export function OptionCard({ label, description, selected, onPress }: Props) {
   return (
     <Pressable
       accessibilityRole="checkbox"
-      accessibilityLabel={label}
+      accessibilityLabel={description ? `${label}. ${description}` : label}
       accessibilityState={{ checked: selected }}
       onPress={onPress}
       style={({ pressed }) => [styles.card, selected && styles.selectedCard, pressed && styles.pressed]}
@@ -22,7 +23,10 @@ export function OptionCard({ label, selected, onPress }: Props) {
       <View accessible={false} style={[styles.indicator, selected && styles.selectedIndicator]}>
         {selected && <CheckMark size={12} />}
       </View>
-      <Text style={styles.label}>{label}</Text>
+      <View style={styles.text}>
+        <Text style={styles.label}>{label}</Text>
+        {description && <Text style={styles.description}>{description}</Text>}
+      </View>
     </Pressable>
   );
 }
@@ -32,6 +36,8 @@ const styles = StyleSheet.create({
   selectedCard: { borderColor: theme.colors.primary, backgroundColor: theme.colors.chipFill },
   indicator: { width: 24, height: 24, borderWidth: 2, borderColor: theme.colors.accountBorder, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   selectedIndicator: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primary },
-  label: { flex: 1, color: theme.colors.heading, fontSize: 16, lineHeight: 22 },
+  text: { flex: 1, gap: 2 },
+  label: { color: theme.colors.heading, fontSize: 16, lineHeight: 22 },
+  description: { color: theme.colors.secondaryText, fontSize: 13, lineHeight: 18 },
   pressed: { opacity: 0.75 },
 });

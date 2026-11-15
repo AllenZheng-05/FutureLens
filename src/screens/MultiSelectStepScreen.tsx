@@ -14,6 +14,8 @@ type Props<T extends string> = {
   step: number;
   totalSteps: number;
   title: string;
+  // What this step changes; shown before "Choose all that apply."
+  subtitle: string;
   options: readonly LensOption<T>[];
   initialIds?: readonly T[];
   backLabel: string;
@@ -27,7 +29,7 @@ type Props<T extends string> = {
 // Selections live in component state; the page stays mounted, so they survive navigation.
 // initialIds seeds that state, e.g. when App remounts the step to edit saved choices.
 export function MultiSelectStepScreen<T extends string>({
-  step, totalSteps, title, options, initialIds = [], backLabel, skipLabel, onBack, onSkip, onContinue,
+  step, totalSteps, title, subtitle, options, initialIds = [], backLabel, skipLabel, onBack, onSkip, onContinue,
 }: Props<T>) {
   const insets = useSafeAreaInsets();
   const [selectedIds, setSelectedIds] = useState<readonly T[]>(initialIds);
@@ -57,7 +59,7 @@ export function MultiSelectStepScreen<T extends string>({
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.introduction}>
           <Text accessibilityRole="header" style={styles.title}>{title}</Text>
-          <Text style={styles.subtitle}>Choose all that apply.</Text>
+          <Text style={styles.subtitle}>{`${subtitle} Choose all that apply.`}</Text>
         </View>
 
         <View style={styles.options}>
@@ -65,6 +67,7 @@ export function MultiSelectStepScreen<T extends string>({
             <OptionCard
               key={option.id}
               label={option.label}
+              description={option.description}
               selected={selectedIds.includes(option.id)}
               onPress={() => toggle(option.id)}
             />
