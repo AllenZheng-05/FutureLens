@@ -107,7 +107,9 @@ the device's system font in place of Inter, which has not been bundled.
   perspectives get an "In your Lens" tag and move to the front, extra
   perspective cards appear (Voters & press, Admissions officers, Old rivals),
   readings shift when the draft's topic is one the Lens watches, and a "Your
-  Lens" note appears when the audience is wider than the Lens's sharing rule.
+  Lens" note appears when that watched topic's sharing rule is wider than the
+  audience. Unwatched topics trigger no note, and the private fix then simply
+  says "Same post, smaller audience."
 - Fix this post opens a sheet: Rewrite it, Add context, or Share somewhere more
   private — each with a one-line description of what the fix does (the private
   one explains the Lens rule when it applies). The private fix moves the post
@@ -160,7 +162,7 @@ With no Lens saved (fresh app, or never finishing My Lens setup):
 
 Set up once via **My Lens** tab: goal *Land an internship or job*; perspectives
 *Future employers*, *Voters & press*, and *Strangers with no context*; topics
-*Jokes & sarcasm*; save with default sharing rules.
+*Jokes & sarcasm* and *Opinions I may change*; save with default sharing rules.
 
 1. Re-check the **Student meeting** sample (same text as scenario 1).
 2. Point out, in order:
@@ -183,9 +185,10 @@ Still with that Lens:
    **Friends** before checking.
 2. Point out: the "Your Lens" note is **gone** — a Friends post already obeys
    the friends-account rule, so the post only looked risky in Public.
-3. Now check the **Career update** sample with its audience switched to
-   **Public**. The note reappears, this time for *Opinions I may change* —
-   proving the rule check is per topic, per account, not hardcoded to one draft.
+3. Now check the **Career update** sample at its default **Work** audience. The
+   note appears for *Opinions I may change* — Work posts count as public-level,
+   so they're checked against the public account's rules, where opinions are
+   Friends-only. Checking it again as **Public** behaves the same way.
 
 #### 4. Results are snapshotted at check time
 

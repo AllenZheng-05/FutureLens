@@ -275,7 +275,8 @@ const readerPerspective: Partial<Record<string, PerspectiveId>> = {
 };
 
 // How wide each post audience and each sharing rule is, for the rule check.
-const audienceLevels: Record<Audience, number> = { Public: 2, Work: 1, Friends: 1 };
+// Work counts as public-level: colleagues aren't necessarily friends.
+const audienceLevels: Record<Audience, number> = { Public: 2, Work: 2, Friends: 1 };
 const ruleLevels: Record<SharingAudience, number> = { public: 2, friends: 1, private: 0 };
 const ruleLabels: Record<SharingAudience, string> = { public: 'Public', friends: 'Friends', private: 'Private' };
 
@@ -327,11 +328,13 @@ export function buildPostCheckResult(
   ];
 
   // Rule check: is this draft's audience wider than the Lens allows for its topic?
+  // Only topics the Lens actually watches can trigger the note; anything else
+  // gets no note, and the private fix just says "Same post, smaller audience."
   let lensNote: string | undefined;
   let privateHint: string | undefined;
-  if (base.topicId) {
-    // Public posts are governed by the public account's rules; the rest by the friends account.
-    const account: LensAccount = request.audience === 'Public' ? 'public' : 'friends';
+  if (base.topicId && topicInLens) {
+    // Public and Work posts are governed by the public account's rules; Friends posts by the friends account.
+    const account: LensAccount = request.audience === 'Friends' ? 'friends' : 'public';
     const rule = lens.rules[account][base.topicId];
     if (ruleLevels[rule] < audienceLevels[request.audience]) {
       const topicLabel = topicOptions.find(option => option.id === base.topicId)?.label ?? 'this topic';
